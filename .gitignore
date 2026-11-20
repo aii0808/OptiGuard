@@ -1,7 +1,29 @@
+# Dependencies
 node_modules/
+*/node_modules/
+
+# Environment variables & secrets (CRITICAL: DO NOT COMMIT SENSITIVE DATA)
 .env
 .env.*
+*.env
+backend/.env
+frontend/.env
 !.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Runtime temporary data
+backend/data/pending_registrations.json
+
+# Production build outputs
 dist/
+*/dist/
+build/
+*/build/
+
+# Logs & temp files
 *.log
+*/logs/
 *.pdf
+.DS_Store
+Thumbs.db

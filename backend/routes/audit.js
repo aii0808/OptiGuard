@@ -11,6 +11,7 @@ const upload = multer({
   fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
 });
 
+// 1. Submit Audit Checklist & Eviden Foto
 router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async (req, res) => {
   const b = req.body || {};
   const tiket_id = Number(b.tiket_id);
@@ -34,7 +35,7 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
     return res.status(403).json({ error: 'Tiket tidak ditemukan atau bukan milik kamu' });
   if (tiket.status_tiket === 'Selesai')
     return res.status(409).json({ error: 'Tiket sudah selesai' });
-    if (tiket.status_tiket === 'Pending')
+  if (tiket.status_tiket === 'Pending')
     return res.status(409).json({ error: 'Mulai tiket dulu sebelum mengaudit' });
   
   const { data: odp } = await supabase.from('odp').select('id, area').eq('id', odp_id).maybeSingle();
@@ -49,7 +50,7 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
   if (up.error) return res.status(500).json({ error: 'Upload foto gagal: ' + up.error.message });
   const foto_url = supabase.storage.from('evidence').getPublicUrl(path).data.publicUrl;
 
-  // Simpan audit + update odp + update tiket dalam satu transaksi
+  // Simpan audit + update odp + update tiket dalam satu transaksi via RPC
   const { error } = await supabase.rpc('submit_audit', {
     p_tiket_id: tiket_id, p_odp_id: odp_id,
     p_tiang: Number(b.tiang), p_boks: Number(b.boks),
@@ -64,6 +65,66 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
   }
 
   res.status(201).json({ status_akhir: status, foto_bukti: foto_url });
+});
+
+// 2. Laporan Hasil Pekerjaan (Selesai) untuk Pimpinan & Teknisi (Siap Cetak / Export)
+router.get('/laporan', authRequired, async (req, res) => {
+  try {
+    const [auditRes, tiketRes, odpRes, usersRes] = await Promise.all([
+      supabase.from('audit_valins').select('*').order('waktu_audit', { ascending: false }),
+      supabase.from('tiket_patroli').select('*'),
+      supabase.from('odp').select('id, kode_odp, alamat, area, kapasitas_port, port_terpakai, status_fisik'),
+      supabase.from('users').select('id, nama_lengkap'),
+    ]);
+
+    if (auditRes.error) return res.status(500).json({ error: auditRes.error.message });
+
+    const tiketMap = new Map((tiketRes.data || []).map((t) => [t.id, t]));
+    const odpMap = new Map((odpRes.data || []).map((o) => [o.id, o]));
+    const userMap = new Map((usersRes.data || []).map((u) => [u.id, u.nama_lengkap]));
+
+    let reports = (auditRes.data || []).map((a) => {
+      const tiket = tiketMap.get(a.tiket_id) || {};
+      const odp = odpMap.get(a.odp_id) || {};
+      return {
+        id: a.id,
+        waktu_audit: a.waktu_audit,
+        tiket_id: a.tiket_id,
+        area_klaster: tiket.area_klaster || odp.area || '-',
+        tanggal_tugas: tiket.tanggal_tugas || null,
+        status_tiket: tiket.status_tiket || 'Selesai',
+        teknisi_id: tiket.teknisi_id,
+        teknisi_nama: userMap.get(tiket.teknisi_id) || (tiket.teknisi_id === 99 ? 'Open Pool' : `#${tiket.teknisi_id}`),
+        pimpinan_nama: userMap.get(tiket.pimpinan_id) || `#${tiket.pimpinan_id}`,
+        odp: {
+          id: odp.id,
+          kode_odp: odp.kode_odp || '-',
+          alamat: odp.alamat || '-',
+          area: odp.area || '-',
+          kapasitas_port: odp.kapasitas_port,
+          port_terpakai: odp.port_terpakai,
+          status_fisik: odp.status_fisik,
+        },
+        kondisi: {
+          tiang: a.kondisi_tiang,
+          boks: a.kondisi_boks,
+          kabel: a.kondisi_kabel,
+          port: a.kondisi_port,
+        },
+        status_akhir: a.status_akhir,
+        foto_bukti: a.foto_bukti,
+      };
+    });
+
+    // Jika yang meminta teknisi, filter sesuai teknisinya (atau tampilkan semua jika pimpinan)
+    if (req.user.role === 'teknisi') {
+      reports = reports.filter((r) => r.teknisi_id === req.user.id);
+    }
+
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

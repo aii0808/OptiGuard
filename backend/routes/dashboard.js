@@ -12,10 +12,10 @@ router.get('/', authRequired, roleOnly('pimpinan'), async (_req, res) => {
   res.json(rekap);
 });
 
-router.get('/odp', authRequired, roleOnly('pimpinan'), async (_req, res) => {
+router.get('/odp', authRequired, async (_req, res) => {
   const { data: odp, error } = await supabase
     .from('odp')
-    .select('id, kode_odp, alamat, area, kapasitas_port, port_terpakai, status, status_fisik, diblokir, alasan_blokir')
+    .select('id, kode_odp, alamat, area, latitude, longitude, kapasitas_port, port_terpakai, status, status_fisik, diblokir, alasan_blokir')
     .order('id');
   if (error) return res.status(500).json({ error: error.message });
 
