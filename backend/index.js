@@ -15,6 +15,21 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'online',
+    service: 'OptiGuard STO Telkom Akses Payakumbuh API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/auth',
+      tiket: '/tiket',
+      audit: '/audit',
+      dashboard: '/dashboard',
+    },
+  });
+});
+
 app.get('/health', async (_req, res) => {
   const { count, error } = await supabase
     .from('odp')
