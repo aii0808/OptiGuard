@@ -113,7 +113,7 @@ router.post('/', authRequired, roleOnly('pimpinan'), async (req, res) => {
   }
 
   // Kirim ke grup Telegram
-  const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID;
+  const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1005361280995';
   let groupTerkirim = false;
   if (targetGroup) {
     groupTerkirim = await kirimTelegram(targetGroup, teks);
@@ -181,7 +181,7 @@ router.post('/:id/klaim', authRequired, roleOnly('teknisi'), async (req, res) =>
   if (error) return res.status(500).json({ error: error.message });
 
   const meta = parseAreaKlaster(tiket.area_klaster);
-  const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID;
+  const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1005361280995';
   if (targetGroup) {
     kirimTelegram(targetGroup, `👷 <b>Tiket #${id} (${meta.area || 'Patroli'})</b> telah diambil/diklaim oleh teknisi: <b>${req.user.nama}</b>.`);
   }
