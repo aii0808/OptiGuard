@@ -13,9 +13,17 @@ function copy404Plugin() {
     closeBundle() {
       const dist = path.resolve(__dirname, 'dist')
       const indexHtml = path.join(dist, 'index.html')
-      const notFoundHtml = path.join(dist, '404.html')
-      if (fs.existsSync(indexHtml)) {
-        fs.copyFileSync(indexHtml, notFoundHtml)
+      if (!fs.existsSync(indexHtml)) return
+
+      // 1. Fallback 404.html
+      fs.copyFileSync(indexHtml, path.join(dist, '404.html'))
+
+      // 2. Physical directory fallbacks for every route so deep links and refresh ALWAYS return 200 OK
+      const routes = ['login', 'register', 'dashboard', 'webgis', 'tiket', 'tugas', 'laporan', 'profil', 'approval']
+      for (const r of routes) {
+        const dir = path.join(dist, r)
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+        fs.copyFileSync(indexHtml, path.join(dir, 'index.html'))
       }
     },
   }
