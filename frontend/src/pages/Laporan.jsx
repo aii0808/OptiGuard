@@ -17,6 +17,7 @@ import {
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
+import { parseFotoBukti } from '../utils/foto.js';
 
 const WARNA_STATUS = {
   Aman: 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700',
@@ -385,20 +386,35 @@ export default function Laporan() {
                       </td>
 
                       <td className="p-2.5 print:p-1.5 align-top text-center print:border print:border-black print:bg-white">
-                        {item.foto_bukti ? (
-                          <div className="inline-block">
-                            <img
-                              src={item.foto_bukti}
-                              alt="Eviden Lapangan"
-                              className="w-14 h-14 print:w-12 print:h-12 rounded-lg object-cover border border-slate-300 print:border-black shadow-sm mx-auto"
-                            />
-                            <span className="block text-[8px] text-slate-500 print:text-black mt-0.5">
-                              Eviden Fisik
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 print:text-black text-[10px] italic">Tidak ada foto</span>
-                        )}
+                        {(() => {
+                          const fotoList = parseFotoBukti(item.foto_bukti);
+                          if (fotoList.length === 0) {
+                            return <span className="text-slate-400 print:text-black text-[10px] italic">Tidak ada foto</span>;
+                          }
+                          return (
+                            <div className="flex flex-wrap gap-1.5 justify-center items-start">
+                              {fotoList.map((url, fIdx) => (
+                                <a
+                                  key={fIdx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-block group text-center"
+                                  title={`Buka Foto Eviden ${fIdx + 1}`}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Eviden ${fIdx + 1}`}
+                                    className="w-12 h-12 print:w-10 print:h-10 rounded-lg object-cover border border-slate-300 print:border-black shadow-sm mx-auto transition group-hover:scale-105"
+                                  />
+                                  <span className="block text-[8px] text-slate-500 print:text-black mt-0.5 whitespace-nowrap">
+                                    {fotoList.length > 1 ? `Foto ${fIdx + 1}` : 'Eviden Fisik'}
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))}

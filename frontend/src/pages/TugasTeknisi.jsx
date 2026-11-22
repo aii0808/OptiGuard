@@ -8,12 +8,15 @@ import {
   Navigation,
   Bell,
   Check,
+  Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import { Tilt3DCard } from '../components/MouseEffect.jsx';
+import { parseFotoBukti } from '../utils/foto.js';
 
 const WARNA_STATUS = {
   Aman: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
@@ -80,28 +83,70 @@ async function kompresGambar(file, maxSisi = 1280, kualitas = 0.8) {
   }
 }
 
+const SLOTS_EVIDEN = [
+  {
+    key: 0,
+    judul: 'Foto 1: Eviden Boks ODP',
+    wajib: true,
+    sub: 'Wajib: Fisik boks ODP, pintu, atau susunan splitter',
+  },
+  {
+    key: 1,
+    judul: 'Foto 2: Eviden Tiang / Kabel',
+    wajib: false,
+    sub: 'Opsional: Kondisi tiang miring / kabel dropcore kendur',
+  },
+  {
+    key: 2,
+    judul: 'Foto 3: Eviden Tambahan',
+    wajib: false,
+    sub: 'Opsional: Detail kerusakan fisik / lingkungan titik ODP',
+  },
+];
+
 function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
   const { showSnackbar } = useSnackbar();
   const [nilai, setNilai] = useState({ tiang: 0, boks: 0, kabel: 0, port: 0 });
-  const [foto, setFoto] = useState(null);
-  const [preview, setPreview] = useState('');
+  const [fotos, setFotos] = useState([null, null, null]);
+  const [previews, setPreviews] = useState(['', '', '']);
   const [catatan, setCatatan] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const lengkap = Object.values(nilai).every(Boolean) && foto;
+  // Minimal Foto 1 (Boks ODP) wajib diisi beserta 4 poin checklist
+  const lengkap = Object.values(nilai).every(Boolean) && Boolean(fotos[0]);
 
-  async function handlePilihFoto(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const k = await kompresGambar(f);
-    setFoto(k);
-    setPreview(URL.createObjectURL(k));
+  async function handlePilihFoto(idx, file) {
+    if (!file) return;
+    const k = await kompresGambar(file);
+    setFotos((prev) => {
+      const next = [...prev];
+      next[idx] = k;
+      return next;
+    });
+    setPreviews((prev) => {
+      const next = [...prev];
+      next[idx] = URL.createObjectURL(k);
+      return next;
+    });
+  }
+
+  function handleHapusFoto(idx) {
+    setFotos((prev) => {
+      const next = [...prev];
+      next[idx] = null;
+      return next;
+    });
+    setPreviews((prev) => {
+      const next = [...prev];
+      next[idx] = '';
+      return next;
+    });
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!lengkap) {
-      showSnackbar('Harap lengkapi seluruh 4 poin checklist kondisi fisik dan unggah foto eviden.', 'warning');
+      showSnackbar('Harap lengkapi seluruh 4 poin checklist kondisi fisik dan minimal Foto 1 (Boks ODP).', 'warning');
       return;
     }
     setLoading(true);
@@ -113,7 +158,11 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
       fd.append('boks', nilai.boks);
       fd.append('kabel', nilai.kabel);
       fd.append('port', nilai.port);
-      fd.append('foto', foto);
+
+      // Unggah semua foto eviden yang dipilih (1 sampai 3 foto)
+      fotos.forEach((f) => {
+        if (f) fd.append('foto', f);
+      });
       if (catatan) fd.append('catatan', catatan);
 
       const res = await api('/audit', { method: 'POST', form: fd });
@@ -205,38 +254,131 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
         ))}
       </div>
 
-      {/* Unggah Foto Eviden Lapangan */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-          5. Foto Eviden Fisik Lapangan (Wajib)
-        </label>
-        <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 transition bg-slate-50/50 dark:bg-slate-800/40">
-          {preview ? (
-            <div className="relative">
-              <img src={preview} alt="Preview Eviden" className="max-h-56 rounded-xl object-contain shadow-md" />
-              <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-3 py-1 rounded-lg">
-                Klik untuk ganti foto eviden
-              </span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center space-y-1.5 text-slate-400 py-4">
-              <div className="p-3 rounded-full bg-red-500/10 text-[#ED1C24]">
-                <Camera className="w-8 h-8" />
+      {/* Unggah Foto Eviden Lapangan (Mendukung hingga 3 foto: Boks ODP, Tiang, Kabel) */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            5. Foto Eviden Lapangan (Maks. 3 Foto)
+          </label>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+            Foto 1 Wajib · Foto 2 & 3 Opsional
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {SLOTS_EVIDEN.map((slot) => {
+            const idx = slot.key;
+            const prevUrl = previews[idx];
+            return (
+              <div
+                key={idx}
+                className={`p-3.5 rounded-2xl border transition ${
+                  prevUrl
+                    ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/40'
+                    : slot.wajib
+                    ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-300 dark:border-slate-700'
+                    : 'bg-slate-50/60 dark:bg-slate-800/30 border-dashed border-slate-300 dark:border-slate-700/60'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <span>{slot.judul}</span>
+                    {slot.wajib ? (
+                      <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+                        Wajib
+                      </span>
+                    ) : (
+                      <span className="text-[9.5px] text-slate-400">Opsional</span>
+                    )}
+                  </div>
+                  {prevUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleHapusFoto(idx)}
+                      className="text-[11px] text-red-500 hover:text-red-700 flex items-center gap-0.5 cursor-pointer font-semibold"
+                      title="Hapus foto ini"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Hapus</span>
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[10.5px] text-slate-400 mb-2 leading-tight">{slot.sub}</p>
+
+                {prevUrl ? (
+                  <div className="space-y-2">
+                    <div className="relative group overflow-hidden rounded-xl border border-slate-300 dark:border-slate-700 bg-black">
+                      <img
+                        src={prevUrl}
+                        alt={slot.judul}
+                        className="w-full h-28 object-cover rounded-xl shadow-sm"
+                      />
+                      <span className="absolute bottom-1.5 left-1.5 bg-black/80 text-emerald-400 text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Tersimpan
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <label className="py-1.5 px-2 rounded-xl text-center text-[10.5px] font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center justify-center gap-1 transition">
+                        <Camera className="w-3 h-3 text-[#ED1C24]" />
+                        <span>Kamera</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => handlePilihFoto(idx, e.target.files?.[0])}
+                          className="hidden"
+                        />
+                      </label>
+                      <label className="py-1.5 px-2 rounded-xl text-center text-[10.5px] font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center justify-center gap-1 transition">
+                        <ImageIcon className="w-3 h-3 text-blue-500" />
+                        <span>Galeri</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePilihFoto(idx, e.target.files?.[0])}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Opsi 1: Kamera Langsung */}
+                      <label className="flex flex-col items-center justify-center py-3 px-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-[#ED1C24] cursor-pointer transition text-center shadow-xs">
+                        <Camera className="w-5 h-5 mb-1 text-[#ED1C24]" />
+                        <span className="text-[11px] font-bold">Kamera</span>
+                        <span className="text-[9px] text-red-500/80">Foto langsung</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => handlePilihFoto(idx, e.target.files?.[0])}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Opsi 2: Dari Galeri / File */}
+                      <label className="flex flex-col items-center justify-center py-3 px-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer transition text-center shadow-xs">
+                        <ImageIcon className="w-5 h-5 mb-1 text-blue-500" />
+                        <span className="text-[11px] font-bold">Galeri / File</span>
+                        <span className="text-[9px] text-slate-400">Pilih dari HP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePilihFoto(idx, e.target.files?.[0])}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                Ambil Foto Kamera / Pilih dari Galeri
-              </span>
-              <span className="text-[11px] text-slate-400">Pastikan foto jelas menampilkan boks ODP / susunan splitter</span>
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handlePilihFoto}
-            className="hidden"
-          />
-        </label>
+            );
+          })}
+        </div>
       </div>
 
       {/* Catatan Lapangan Opsional */}
@@ -627,16 +769,26 @@ export default function TugasTeknisi() {
 
                       {sudahAudit ? (
                         <div className="flex items-center gap-2">
-                          {o.audit?.foto_bukti && (
-                            <a
-                              href={o.audit.foto_bukti}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[11px] font-bold text-blue-500 hover:underline"
-                            >
-                              Lihat Eviden
-                            </a>
-                          )}
+                          {(() => {
+                            const fotoList = parseFotoBukti(o.audit?.foto_bukti);
+                            if (fotoList.length === 0) return null;
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                {fotoList.map((url, fIdx) => (
+                                  <a
+                                    key={fIdx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[11px] font-bold text-blue-500 hover:underline"
+                                    title={`Buka Eviden ${fIdx + 1}`}
+                                  >
+                                    {fotoList.length > 1 ? `Foto ${fIdx + 1}` : 'Lihat Eviden'}
+                                  </a>
+                                ))}
+                              </div>
+                            );
+                          })()}
                           <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 text-xs font-bold border border-emerald-300 dark:border-emerald-800">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                             <span>Sudah Diaudit</span>

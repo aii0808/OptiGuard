@@ -24,6 +24,7 @@ import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import { Tilt3DCard } from '../components/MouseEffect.jsx';
+import { parseFotoBukti } from '../utils/foto.js';
 
 const WARNA_STATUS = {
   Aman: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
@@ -605,11 +606,19 @@ export default function TugasPimpinan() {
                         Tiang {o.audit_terakhir.kondisi_tiang} · Boks {o.audit_terakhir.kondisi_boks} · Kabel {o.audit_terakhir.kondisi_kabel} · Port {o.audit_terakhir.kondisi_port}
                       </div>
                     </div>
-                    {o.audit_terakhir.foto_bukti && (
-                      <a href={o.audit_terakhir.foto_bukti} target="_blank" rel="noreferrer" className="shrink-0">
-                        <img src={o.audit_terakhir.foto_bukti} alt="Eviden" className="w-12 h-12 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-sm" />
-                      </a>
-                    )}
+                    {(() => {
+                      const fotoList = parseFotoBukti(o.audit_terakhir.foto_bukti);
+                      if (fotoList.length === 0) return null;
+                      return (
+                        <div className="flex items-center gap-1 shrink-0">
+                          {fotoList.map((url, fIdx) => (
+                            <a key={fIdx} href={url} target="_blank" rel="noreferrer" title={`Eviden ${fIdx + 1}`}>
+                              <img src={url} alt={`Eviden ${fIdx + 1}`} className="w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-sm hover:scale-105 transition" />
+                            </a>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="text-[11px] text-slate-400 italic">Belum ada riwayat audit fisik.</div>
@@ -764,11 +773,19 @@ export default function TugasPimpinan() {
                           Tiang {o.audit.kondisi_tiang} · Boks {o.audit.kondisi_boks} · Kabel {o.audit.kondisi_kabel} · Port {o.audit.kondisi_port}
                         </div>
                       </div>
-                      {o.audit.foto_bukti && (
-                        <a href={o.audit.foto_bukti} target="_blank" rel="noreferrer">
-                          <img src={o.audit.foto_bukti} alt="Eviden" className="w-12 h-12 rounded-xl object-cover border" />
-                        </a>
-                      )}
+                      {(() => {
+                        const fotoList = parseFotoBukti(o.audit.foto_bukti);
+                        if (fotoList.length === 0) return null;
+                        return (
+                          <div className="flex items-center gap-1 shrink-0">
+                            {fotoList.map((url, fIdx) => (
+                              <a key={fIdx} href={url} target="_blank" rel="noreferrer" title={`Eviden ${fIdx + 1}`}>
+                                <img src={url} alt={`Eviden ${fIdx + 1}`} className="w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-sm hover:scale-105 transition" />
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="text-slate-400 italic pl-7">Menunggu audit di lapangan oleh teknisi.</div>

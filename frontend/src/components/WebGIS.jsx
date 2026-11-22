@@ -15,6 +15,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
+import { parseFotoBukti } from '../utils/foto.js';
 
 /**
  * Helper to display human-readable physical inspection status without numeric codes 1, 2, 3
@@ -334,19 +335,38 @@ export default function WebGIS({ odpList = [], loading = false, onRefresh, lastS
                           <div>Kabel: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('kabel', o.audit_terakhir.kondisi_kabel)}</b></div>
                           <div>Port: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('port', o.audit_terakhir.kondisi_port)}</b></div>
                         </div>
-                        {o.audit_terakhir.foto_bukti && (
-                          <div className="pt-1">
-                            <a
-                              href={o.audit_terakhir.foto_bukti}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="odp-eviden-link text-[10px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              <span>Lihat Foto Eviden Lapangan</span>
-                            </a>
-                          </div>
-                        )}
+                        {(() => {
+                          const fotoList = parseFotoBukti(o.audit_terakhir.foto_bukti);
+                          if (fotoList.length === 0) return null;
+                          return (
+                            <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">
+                                Foto Eviden ({fotoList.length} Foto):
+                              </div>
+                              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                                {fotoList.map((url, fIdx) => (
+                                  <a
+                                    key={fIdx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="shrink-0 group text-center"
+                                    title={`Buka Eviden ${fIdx + 1}`}
+                                  >
+                                    <img
+                                      src={url}
+                                      alt={`Eviden ${fIdx + 1}`}
+                                      className="w-11 h-11 rounded-lg object-cover border border-slate-300 dark:border-slate-700 shadow-sm group-hover:opacity-80 transition"
+                                    />
+                                    <span className="block text-[8px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5">
+                                      Foto {fIdx + 1}
+                                    </span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium italic mb-2.5">

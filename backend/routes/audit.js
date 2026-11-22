@@ -13,16 +13,22 @@ const upload = multer({
 
 const router = Router();
 
-// Kirim audit checklist (Teknisi)
-router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async (req, res) => {
+// Kirim audit checklist (Teknisi - mendukung hingga 3 foto eviden: boks ODP, tiang, kabel)
+router.post('/', authRequired, roleOnly('teknisi'), upload.any(), async (req, res) => {
   const b = req.body || {};
   const tiket_id = Number(b.tiket_id);
   const odp_id = Number(b.odp_id);
 
   if (!Number.isInteger(tiket_id) || !Number.isInteger(odp_id))
     return res.status(400).json({ error: 'tiket_id dan odp_id wajib angka valid' });
-  if (!req.file)
-    return res.status(400).json({ error: 'Foto eviden wajib diunggah' });
+
+  // Kumpulkan seluruh file foto yang diunggah (bisa single 'foto' atau multiple)
+  const files = (req.files || []).filter((f) => f && f.mimetype && f.mimetype.startsWith('image/'));
+  if (req.file && !files.includes(req.file)) {
+    files.unshift(req.file);
+  }
+  if (files.length === 0)
+    return res.status(400).json({ error: 'Foto eviden wajib diunggah (minimal 1 foto boks ODP)' });
 
   // Validasi nilai kuesioner 1..3
   const poin = [b.tiang, b.boks, b.kabel, b.port].map(Number);
@@ -58,13 +64,29 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
     return res.status(400).json({ error: 'ODP ini tidak termasuk dalam daftar target rute tugas tiket ini' });
   }
 
-  // Upload foto ke Storage
-  const ext = req.file.mimetype.split('/')[1] || 'jpg';
-  const path = `tiket-${tiket_id}/odp-${odp_id}-${Date.now()}.${ext}`;
-  const up = await supabase.storage.from('evidence')
-    .upload(path, req.file.buffer, { contentType: req.file.mimetype });
-  if (up.error) return res.status(500).json({ error: 'Upload foto gagal: ' + up.error.message });
-  const foto_url = supabase.storage.from('evidence').getPublicUrl(path).data.publicUrl;
+  // Upload seluruh foto eviden (maksimal 3 foto: ODP, tiang, kabel) ke Supabase Storage
+  const maxPhotos = Math.min(files.length, 3);
+  const uploadedUrls = [];
+  const uploadedPaths = [];
+
+  for (let i = 0; i < maxPhotos; i++) {
+    const f = files[i];
+    const ext = f.mimetype.split('/')[1] || 'jpg';
+    const path = `tiket-${tiket_id}/odp-${odp_id}-${Date.now()}-${i + 1}.${ext}`;
+    const up = await supabase.storage.from('evidence')
+      .upload(path, f.buffer, { contentType: f.mimetype });
+    if (up.error) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from('evidence').remove(uploadedPaths);
+      }
+      return res.status(500).json({ error: 'Upload foto gagal: ' + up.error.message });
+    }
+    uploadedPaths.push(path);
+    const pubUrl = supabase.storage.from('evidence').getPublicUrl(path).data.publicUrl;
+    uploadedUrls.push(pubUrl);
+  }
+
+  const foto_url = uploadedUrls.join(',');
 
   // Database check constraint audit_valins: ('Normal', 'Warning', 'Critical')
   const statusAuditValins = status === 'Aman' ? 'Normal' : status;
@@ -77,7 +99,9 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
     p_status: statusAuditValins, p_foto: foto_url,
   });
   if (error) {
-    await supabase.storage.from('evidence').remove([path]);
+    if (uploadedPaths.length > 0) {
+      await supabase.storage.from('evidence').remove(uploadedPaths);
+    }
     return res.status(400).json({ error: error.message });
   }
 
@@ -127,6 +151,7 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
     ok: true,
     status_akhir: status,
     foto_url,
+    foto_urls: uploadedUrls,
     semua_selesai: semuaSelesai,
     total_target: totalTarget,
     audited_count: doneCount,
