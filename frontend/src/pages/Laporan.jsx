@@ -151,36 +151,36 @@ export default function Laporan() {
     <div className="space-y-6">
       {/* Printable Area Wrapper */}
       <div className="print-area">
-        {/* Kop Surat Resmi PT Telkom Akses (Hanya Tampil Saat Dicetak) */}
-        <div className="hidden print:block border-b-2 border-slate-900 pb-3 mb-4">
+        {/* Kop Surat Resmi PT Telkom Akses (Hanya Tampil Saat Dicetak - Mulai Paling Atas Kertas) */}
+        <div className="hidden print:block border-b-2 border-black pb-2 mb-3 print:mt-0 print:pt-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#ED1C24] text-white flex items-center justify-center font-black text-xl rounded-lg border border-red-700">
+              <div className="w-12 h-12 bg-[#ED1C24] text-white flex items-center justify-center font-black text-xl rounded-lg border border-black print:bg-[#ED1C24] print:text-white">
                 TA
               </div>
               <div>
-                <h1 className="text-base font-black tracking-tight text-slate-950 uppercase leading-tight">
+                <h1 className="text-base font-black tracking-tight text-black uppercase leading-tight print:text-black">
                   PT TELKOM AKSES · STO PAYAKUMBUH
                 </h1>
-                <p className="text-[11px] font-semibold text-slate-700 leading-tight">
+                <p className="text-[11px] font-semibold text-black leading-tight print:text-black">
                   KANTOR DAERAH TELEKOMUNIKASI (DATEL) PAYAKUMBUH — WITEL SUMATERA BARAT
                 </p>
-                <p className="text-[9px] text-slate-600">
+                <p className="text-[9px] text-black print:text-black">
                   Jl. Jenderal Sudirman No. 12, Benteng, Kec. Payakumbuh Barat, Kota Payakumbuh | Telp: (0752) 92000
                 </p>
               </div>
             </div>
-            <div className="text-right text-[10px] text-slate-800 leading-tight">
-              <div className="font-extrabold text-[11px] uppercase tracking-wider text-slate-950">
+            <div className="text-right text-[10px] text-black leading-tight print:text-black">
+              <div className="font-extrabold text-[11px] uppercase tracking-wider text-black print:text-black">
                 BERITA ACARA AUDIT (BAPP)
               </div>
               <div>Tanggal Cetak: <b>{todayStr}</b></div>
-              <div className="font-mono text-[9px] text-slate-600">
+              <div className="font-mono text-[9px] text-black print:text-black">
                 No: BA.VALINS/TA-PYK/{activeTiketInfo ? activeTiketInfo.tiket_id : 'REKAP'}/{new Date().getFullYear()}
               </div>
             </div>
           </div>
-          <div className="mt-2 h-0.5 bg-slate-900 w-full" />
+          <div className="mt-2 h-0.5 bg-black w-full print:bg-black" />
         </div>
 
         {/* Action Bar (No Print) */}
@@ -257,48 +257,48 @@ export default function Laporan() {
 
         {/* Informasi Berita Acara Tiket Terpilih (Tampil di Print dan di Web) */}
         {activeTiketInfo && (
-          <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 space-y-1.5 print:bg-white print:border-slate-800 print:p-2.5 print:text-[10px]">
+          <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 space-y-1.5 print:bg-white print:border print:border-black print:p-2.5 print:text-[10px] print:mt-1">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:gap-2">
               <div>
-                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                <span className="text-slate-500 print:text-black block text-[10px] uppercase font-bold">
                   Nomor Tiket
                 </span>
-                <span className="font-extrabold text-sm text-[#ED1C24] print:text-slate-950 font-mono">
+                <span className="font-extrabold text-sm text-[#ED1C24] print:text-black font-mono">
                   #{activeTiketInfo.tiket_id}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                <span className="text-slate-500 print:text-black block text-[10px] uppercase font-bold">
                   Wilayah Klaster
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black">
                   {activeTiketInfo.area_klaster}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                <span className="text-slate-500 print:text-black block text-[10px] uppercase font-bold">
                   Teknisi Pelaksana
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black">
                   {activeTiketInfo.teknisi_nama}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                <span className="text-slate-500 print:text-black block text-[10px] uppercase font-bold">
                   Pimpinan / Penugas
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black">
                   {activeTiketInfo.pimpinan_nama}
                 </span>
               </div>
             </div>
 
             {activeTiketInfo.rute && (
-              <div className="pt-1 border-t border-slate-200 dark:border-slate-700 print:border-slate-300">
-                <span className="text-[10px] font-bold text-slate-500 print:text-slate-700 mr-2">
+              <div className="pt-1 border-t border-slate-200 dark:border-slate-700 print:border-black">
+                <span className="text-[10px] font-bold text-slate-500 print:text-black mr-2">
                   Urutan Rute Kerja:
                 </span>
-                <span className="font-mono text-[11px] print:text-[9.5px] font-semibold text-slate-800 dark:text-slate-200 print:text-slate-950">
+                <span className="font-mono text-[11px] print:text-[9.5px] font-semibold text-slate-800 dark:text-slate-200 print:text-black">
                   {activeTiketInfo.rute}
                 </span>
               </div>
@@ -425,38 +425,38 @@ export default function Laporan() {
         </div>
 
         {/* Pernyataan Penutup Dokumen Resmi */}
-        <div className="hidden print:block mt-3 text-[9.5px] text-slate-700 leading-relaxed italic">
+        <div className="hidden print:block mt-3 text-[9.5px] text-black leading-relaxed italic print:text-black">
           Demikian Berita Acara Pemeriksaan Pekerjaan & Validasi Instalasi ODP ini dibuat dengan sebenar-benarnya sesuai dengan kondisi fisik riil di lapangan untuk dipergunakan sebagaimana mestinya.
         </div>
 
         {/* Lembar Tanda Tangan Resmi (1 Halaman A4) */}
-        <div className="hidden print:block mt-8 pt-4 border-t border-slate-800 text-[10px] text-slate-950">
+        <div className="hidden print:block mt-6 pt-3 border-t border-black text-[10px] text-black print:border-black print:text-black">
           <div className="grid grid-cols-2 gap-10 text-center">
             {/* Pelaksana Lapangan */}
             <div className="space-y-12">
               <div>
-                <p className="font-semibold text-slate-800">Pelaksana Lapangan,</p>
-                <p className="text-[9px] text-slate-600">Teknisi Patroli Preventive Maintenance</p>
+                <p className="font-semibold text-black print:text-black">Pelaksana Lapangan,</p>
+                <p className="text-[9px] text-black print:text-black">Teknisi Patroli Preventive Maintenance</p>
               </div>
               <div>
-                <p className="font-extrabold underline uppercase">
+                <p className="font-extrabold underline uppercase text-black print:text-black">
                   ( {activeTiketInfo ? activeTiketInfo.teknisi_nama : (user.nama || 'Teknisi Patroli')} )
                 </p>
-                <p className="text-[9px] text-slate-600">Petugas Valins STO Payakumbuh</p>
+                <p className="text-[9px] text-black print:text-black">Petugas Valins STO Payakumbuh</p>
               </div>
             </div>
 
             {/* Pimpinan STO */}
             <div className="space-y-12">
               <div>
-                <p className="font-semibold text-slate-800">Mengetahui & Menyetujui,</p>
-                <p className="text-[9px] text-slate-600">Pimpinan / Koordinator STO Payakumbuh</p>
+                <p className="font-semibold text-black print:text-black">Mengetahui & Menyetujui,</p>
+                <p className="text-[9px] text-black print:text-black">Pimpinan / Koordinator STO Payakumbuh</p>
               </div>
               <div>
-                <p className="font-extrabold underline uppercase">
+                <p className="font-extrabold underline uppercase text-black print:text-black">
                   ( {activeTiketInfo ? activeTiketInfo.pimpinan_nama : 'Robby Permana Putra'} )
                 </p>
-                <p className="text-[9px] text-slate-600">NIK. 89201928 / STO Payakumbuh</p>
+                <p className="text-[9px] text-black print:text-black">NIK. 89201928 / STO Payakumbuh</p>
               </div>
             </div>
           </div>

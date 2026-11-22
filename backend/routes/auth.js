@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
   const kodeBersih = (kode_validasi || '').trim().toUpperCase();
   if (kodeBersih !== 'STO-OPTIGUARD') {
     return res.status(400).json({
-      error: 'Kode validasi pendaftaran instansi salah! Masukkan kode resmi (STO-OPTIGUARD).'
+      error: 'Kode validasi pendaftaran instansi salah! Silakan hubungi Koordinator / Pimpinan STO untuk mendapatkan kode resmi.'
     });
   }
 

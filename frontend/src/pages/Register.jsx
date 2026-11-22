@@ -43,7 +43,7 @@ export default function Register() {
   async function handleRegister(e) {
     e.preventDefault();
     if (!form.kode_validasi.trim()) {
-      showSnackbar('Kode validasi instansi wajib diisi (STO-OPTIGUARD)', 'warning');
+      showSnackbar('Kode validasi instansi wajib diisi', 'warning');
       return;
     }
     setLoading(true);
@@ -248,9 +248,9 @@ export default function Register() {
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
-                    type="text"
+                    type="password"
                     required
-                    placeholder="Masukkan kode: STO-OPTIGUARD"
+                    placeholder="Masukkan kode validasi instansi"
                     value={form.kode_validasi}
                     onChange={(e) => setForm({ ...form, kode_validasi: e.target.value.toUpperCase() })}
                     className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#ED1C24]"
