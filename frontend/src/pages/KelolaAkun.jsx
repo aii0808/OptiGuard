@@ -176,15 +176,26 @@ export default function KelolaAkun() {
       <div className="rounded-3xl glass-panel p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <UserCog className="w-5 h-5 text-[#ED1C24]" />
-            <span>Kelola Akun & Manajemen Tim STO</span>
+            {user.role === 'pimpinan' ? (
+              <>
+                <UserCog className="w-5 h-5 text-[#ED1C24]" />
+                <span>Kelola Akun & Manajemen Tim STO</span>
+              </>
+            ) : (
+              <>
+                <User className="w-5 h-5 text-[#ED1C24]" />
+                <span>Profil Pengguna</span>
+              </>
+            )}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Pengaturan profil pribadi, preferensi notifikasi, dan administrasi akun pengguna Telkom
+            {user.role === 'pimpinan'
+              ? 'Pengaturan profil pribadi, preferensi notifikasi, dan administrasi akun tim Telkom'
+              : 'Pengaturan profil pribadi dan preferensi notifikasi Telegram'}
           </p>
         </div>
 
-        {/* Tab switch for Pimpinan */}
+        {/* Tab switch ONLY for Pimpinan */}
         {user.role === 'pimpinan' && (
           <div className="flex rounded-2xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             <button
@@ -212,8 +223,8 @@ export default function KelolaAkun() {
         )}
       </div>
 
-      {/* TAB 1: Profil Saya & Audio */}
-      {activeTab === 'profil' && (
+      {/* TAB 1: Profil Saya & Audio (Visible to all, and always active for teknisi) */}
+      {(user.role !== 'pimpinan' || activeTab === 'profil') && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Form Profil */}
           <Tilt3DCard className="rounded-3xl glass-panel p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Sparkles, Palette, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Sparkles, Palette, Sun, Moon, Loader2 } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
@@ -49,14 +49,14 @@ export default function Login() {
 
   async function submit(e) {
     e.preventDefault();
+    if (!email || !password || loading) return;
     setLoading(true);
     try {
       const u = await login(email, password);
-      showSnackbar(`Selamat datang kembali, ${u.nama}!`, 'success');
       nav('/dashboard', { replace: true });
+      showSnackbar(`Selamat datang kembali, ${u.nama}!`, 'success');
     } catch (e2) {
       showSnackbar(e2.message, 'error');
-    } finally {
       setLoading(false);
     }
   }
@@ -178,11 +178,20 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 rounded-2xl font-bold text-xs text-white shadow-lg transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+              className="w-full mt-2 py-3 px-4 rounded-2xl font-bold text-xs text-white shadow-lg transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-75"
               style={{ backgroundColor: '#ED1C24' }}
             >
-              <span>{loading ? 'Memproses...' : 'Masuk ke OptiGuard'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Memvalidasi Akun...</span>
+                </>
+              ) : (
+                <>
+                  <span>Masuk ke OptiGuard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

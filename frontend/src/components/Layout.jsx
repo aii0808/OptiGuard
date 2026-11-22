@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   FileText,
   Users,
+  User,
   LogOut,
   Sun,
   Moon,
@@ -111,7 +112,7 @@ export default function Layout({ children }) {
     { to: '/tugas', label: 'Tugas & Open Pool', icon: ClipboardList, badge: openPoolCount },
     { to: '/webgis', label: 'WebGIS Pemetaan ODP', icon: MapPin },
     { to: '/laporan', label: 'Laporan Kerja Lapangan', icon: FileText },
-    { to: '/profil', label: 'Kelola Akun & Profil', icon: Users },
+    { to: '/profil', label: 'Profil Saya', icon: User },
   ];
 
   const links = user?.role === 'pimpinan' ? pimpinanLinks : teknisiLinks;
@@ -277,8 +278,15 @@ export default function Layout({ children }) {
               <Menu className="w-5 h-5 text-[#ED1C24]" />
             </button>
 
-            {/* OptiGuard Brand Badge */}
-            <Logo size="sm" showSubtitle={false} showText={true} />
+            {/* OptiGuard Brand Badge: Only visible when sidebar is collapsed on desktop, or on mobile */}
+            <div className="md:hidden">
+              <Logo size="sm" showSubtitle={false} showText={true} />
+            </div>
+            {collapsed && (
+              <div className="hidden md:block">
+                <Logo size="sm" showSubtitle={false} showText={true} />
+              </div>
+            )}
           </div>
 
           {/* Right Action Icons in Header */}
@@ -302,19 +310,6 @@ export default function Layout({ children }) {
             >
               {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
             </button>
-
-            {/* User Pill */}
-            <div className="hidden sm:flex items-center gap-2.5 pl-3 border-l border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-[#ED1C24] flex items-center justify-center font-bold text-xs text-white shadow-sm">
-                {user?.nama?.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-bold truncate max-w-[130px] text-slate-200">
-                  {user?.nama}
-                </span>
-                <span className="text-[10px] text-slate-400 capitalize">{user?.role}</span>
-              </div>
-            </div>
           </div>
         </header>
 

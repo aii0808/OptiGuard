@@ -24,15 +24,8 @@ export default function WebGISPage() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch
+    // Initial fetch once on load (no continuous auto-refresh polling)
     muatOdp(false);
-
-    // Real-time polling to Supabase every 10 seconds
-    const interval = setInterval(() => {
-      muatOdp(true);
-    }, 10000);
-
-    return () => clearInterval(interval);
   }, [muatOdp]);
 
   return (
