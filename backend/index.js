@@ -57,7 +57,9 @@ app.use('/api/audit', auditRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => console.log('API OptiGuard jalan di port :' + port));
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => console.log('API OptiGuard jalan di port :' + port));
+}
 
 export default app;
