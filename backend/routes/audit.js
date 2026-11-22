@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase.js';
 import { authRequired, roleOnly } from '../middleware/auth.js';
 import { hitungGrade } from '../services/grading.js';
 import { parseAreaKlaster } from './tiket.js';
+import { kirimTelegram } from '../services/telegram.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -35,15 +36,21 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
   if (!tiket || tiket.teknisi_id !== req.user.id)
     return res.status(403).json({ error: 'Tiket tidak ditemukan atau bukan milik kamu' });
   if (tiket.status_tiket === 'Selesai')
-    return res.status(409).json({ error: 'Tiket sudah selesai' });
-  if (tiket.status_tiket === 'Pending')
-    return res.status(409).json({ error: 'Mulai tiket dulu sebelum mengaudit' });
+    return res.status(409).json({ error: 'Tiket ini sudah berstatus Selesai' });
+
+  // Jika status tiket masih Pending, otomatis aktifkan menjadi In Progress saat audit pertama
+  if (tiket.status_tiket === 'Pending') {
+    await supabase
+      .from('tiket_patroli')
+      .update({ status_tiket: 'In Progress' })
+      .eq('id', tiket_id);
+  }
 
   const meta = parseAreaKlaster(tiket.area_klaster);
   const baseArea = meta.area;
   const targetOdpIds = meta.odp_ids;
 
-  const { data: odp } = await supabase.from('odp').select('id, area').eq('id', odp_id).maybeSingle();
+  const { data: odp } = await supabase.from('odp').select('id, kode_odp, area').eq('id', odp_id).maybeSingle();
   if (!odp || (odp.area && odp.area !== baseArea))
     return res.status(400).json({ error: 'ODP bukan bagian dari area klaster tiket ini' });
 
@@ -59,19 +66,68 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
   if (up.error) return res.status(500).json({ error: 'Upload foto gagal: ' + up.error.message });
   const foto_url = supabase.storage.from('evidence').getPublicUrl(path).data.publicUrl;
 
+  // Database check constraint audit_valins: ('Normal', 'Warning', 'Critical')
+  const statusAuditValins = status === 'Aman' ? 'Normal' : status;
+
   // Simpan audit + update odp + update tiket dalam satu transaksi via RPC
   const { error } = await supabase.rpc('submit_audit', {
     p_tiket_id: tiket_id, p_odp_id: odp_id,
     p_tiang: Number(b.tiang), p_boks: Number(b.boks),
     p_kabel: Number(b.kabel), p_port: Number(b.port),
-    p_status: status, p_foto: foto_url,
+    p_status: statusAuditValins, p_foto: foto_url,
   });
   if (error) {
     await supabase.storage.from('evidence').remove([path]);
     return res.status(400).json({ error: error.message });
   }
 
-  res.json({ ok: true, status_akhir: status, foto_url });
+  // Cek apakah seluruh ODP dalam tiket ini sudah selesai diaudit
+  let qTarget = supabase.from('odp').select('id');
+  if (targetOdpIds && targetOdpIds.length > 0) {
+    qTarget = qTarget.in('id', targetOdpIds);
+  } else {
+    qTarget = qTarget.eq('area', baseArea);
+  }
+  const { data: targetOdps } = await qTarget;
+  const totalTarget = targetOdps?.length || 1;
+
+  const { data: auditsDone } = await supabase
+    .from('audit_valins')
+    .select('odp_id')
+    .eq('tiket_id', tiket_id);
+
+  const doneCount = auditsDone?.length || 0;
+  const semuaSelesai = totalTarget > 0 && doneCount >= totalTarget;
+
+  if (semuaSelesai) {
+    await supabase
+      .from('tiket_patroli')
+      .update({ status_tiket: 'Selesai' })
+      .eq('id', tiket_id);
+
+    // Kirim notifikasi Telegram bahwa seluruh pekerjaan tiket selesai
+    const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1005361280995';
+    const pesanSelesai = [
+      '✅ <b>[OPTIGUARD] Tugas Tiket Patroli Selesai!</b>',
+      '',
+      `📋 Tiket: <b>#${tiket_id}</b>`,
+      `📍 Wilayah Klaster: <b>${baseArea}</b>`,
+      `👷 Teknisi Pelaksana: <b>${req.user.nama}</b>`,
+      `🎯 Total ODP Selesai Divalidasi: <b>${doneCount} dari ${totalTarget} Titik ODP</b>`,
+      '',
+      'Seluruh titik ODP telah diaudit fisik dan foto eviden tersimpan aman di sistem OptiGuard.',
+    ].join('\n');
+    kirimTelegram(targetGroup, pesanSelesai);
+  }
+
+  res.json({
+    ok: true,
+    status_akhir: status,
+    foto_url,
+    semua_selesai: semuaSelesai,
+    total_target: totalTarget,
+    audited_count: doneCount,
+  });
 });
 
 // Rekap seluruh laporan kerja lapangan (Pimpinan melihat semua, teknisi melihat tugasnya)

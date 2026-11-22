@@ -223,9 +223,9 @@ export default function KelolaAkun() {
         )}
       </div>
 
-      {/* TAB 1: Profil Saya & Audio (Visible to all, and always active for teknisi) */}
+      {/* TAB 1: Profil Saya (Visible to all, and always active for teknisi) */}
       {(user.role !== 'pimpinan' || activeTab === 'profil') && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="max-w-xl mx-auto">
           {/* Form Profil */}
           <Tilt3DCard className="rounded-3xl glass-panel p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 border-b pb-2 border-slate-200 dark:border-slate-800">
@@ -303,46 +303,6 @@ export default function KelolaAkun() {
                 {savingProfile ? 'Menyimpan...' : 'Simpan Perubahan Akun'}
               </button>
             </form>
-          </Tilt3DCard>
-
-          {/* Audio Chime Settings */}
-          <Tilt3DCard className="rounded-3xl glass-panel p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 border-b pb-2 border-slate-200 dark:border-slate-800">
-              Notifikasi Suara Bell (Ding-Dong)
-            </h3>
-
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-              <div className="flex items-center gap-3">
-                {soundEnabled ? <Volume2 className="w-5 h-5 text-emerald-500" /> : <VolumeX className="w-5 h-5 text-slate-400" />}
-                <div>
-                  <div className="font-bold text-xs text-slate-800 dark:text-slate-100">
-                    Audio Chime Realtime
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    {soundEnabled ? 'Aktif (Berbunyi saat tugas masuk/selesai)' : 'Mati / Senyap'}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={toggleSound}
-                className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
-              >
-                {soundEnabled ? 'Matikan' : 'Aktifkan'}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                triggerDingDong();
-                showSnackbar('Bunyi notifikasi bell berhasil diuji coba!', 'success');
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 py-3 text-xs font-bold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer shadow-sm"
-            >
-              <Volume2 className="w-4 h-4 text-[#ED1C24]" />
-              <span>🔊 Uji Coba Bunyi Bell Notifikasi (Ding-Dong)</span>
-            </button>
           </Tilt3DCard>
         </div>
       )}

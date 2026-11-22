@@ -23,10 +23,46 @@ const WARNA_STATUS = {
 };
 
 const OPSI_KONDISI = [
-  { key: 'tiang', label: '1. Kondisi Tiang Fiber Optik', opsi: [[1, 'Aman'], [2, 'Rusak Ringan'], [3, 'Rusak Berat']] },
-  { key: 'boks', label: '2. Kondisi Boks Distribusi ODP', opsi: [[1, 'Aman'], [2, 'Rusak Ringan'], [3, 'Rusak Berat']] },
-  { key: 'kabel', label: '3. Kondisi Kabel Udara / Dropcore', opsi: [[1, 'Rapi / Aman'], [2, 'Kendur'], [3, 'Putus / Rusak']] },
-  { key: 'port', label: '4. Kondisi Port Konektor / Splitter', opsi: [[1, 'Bersih'], [2, 'Berdebu'], [3, 'Kotor / Rusak']] },
+  {
+    key: 'boks',
+    label: '1. Kondisi Fisik Boks ODP',
+    subtitle: 'Periksa fisik boks, engsel, pintu, dan penguncian',
+    opsi: [
+      [1, 'Aman / Layak'],
+      [2, 'Rusak Ringan'],
+      [3, 'Rusak Berat'],
+    ],
+  },
+  {
+    key: 'tiang',
+    label: '2. Kondisi Tiang Fiber Optik',
+    subtitle: 'Periksa tiang penopang, kemiringan, dan korosi',
+    opsi: [
+      [1, 'Aman / Kokoh'],
+      [2, 'Rusak Ringan'],
+      [3, 'Rusak Berat'],
+    ],
+  },
+  {
+    key: 'kabel',
+    label: '3. Kondisi Kabel Udara / Dropcore',
+    subtitle: 'Periksa bentangan kabel drop core dan kerapian jalur',
+    opsi: [
+      [1, 'Rapi & Aman'],
+      [2, 'Kendur'],
+      [3, 'Putus / Rusak'],
+    ],
+  },
+  {
+    key: 'port',
+    label: '4. Kondisi Port Konektor & Splitter',
+    subtitle: 'Periksa kebersihan adapter dan redaman splitter',
+    opsi: [
+      [1, 'Bersih & Baik'],
+      [2, 'Berdebu'],
+      [3, 'Kotor / Rusak'],
+    ],
+  },
 ];
 
 async function kompresGambar(file, maxSisi = 1280, kualitas = 0.8) {
@@ -49,6 +85,7 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
   const [nilai, setNilai] = useState({ tiang: 0, boks: 0, kabel: 0, port: 0 });
   const [foto, setFoto] = useState(null);
   const [preview, setPreview] = useState('');
+  const [catatan, setCatatan] = useState('');
   const [loading, setLoading] = useState(false);
 
   const lengkap = Object.values(nilai).every(Boolean) && foto;
@@ -64,7 +101,7 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!lengkap) {
-      showSnackbar('Harap lengkapi 4 poin checklist dan unggah foto eviden.', 'warning');
+      showSnackbar('Harap lengkapi seluruh 4 poin checklist kondisi fisik dan unggah foto eviden.', 'warning');
       return;
     }
     setLoading(true);
@@ -77,9 +114,10 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
       fd.append('kabel', nilai.kabel);
       fd.append('port', nilai.port);
       fd.append('foto', foto);
+      if (catatan) fd.append('catatan', catatan);
 
       const res = await api('/audit', { method: 'POST', form: fd });
-      showSnackbar(`Audit selesai! Status fisik ODP: ${res.status_akhir}`, 'success');
+      showSnackbar(`Audit selesai! Status kelayakan fisik: ${res.status_akhir}`, 'success');
       onSelesai(res);
     } catch (e2) {
       showSnackbar(e2.message, 'error');
@@ -92,27 +130,54 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
     <Tilt3DCard className="rounded-3xl glass-panel p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
         <div>
-          <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
-            Form Audit Checklist: {odp.kode_odp}
+          <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#ED1C24]" />
+            <span>Form Audit & Cek Kesehatan ODP: {odp.kode_odp}</span>
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{odp.alamat}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{odp.alamat}</p>
         </div>
         <button
           type="button"
           onClick={onBatal}
-          className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           ✕ Batal
         </button>
       </div>
 
-      <div className="space-y-4">
+      {/* Panduan Rute & Navigasi Lokasi ODP */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs shadow-inner">
+        <div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Koordinat GPS Titik ODP</div>
+          <div className="font-mono text-white font-bold text-sm mt-0.5">
+            {odp.latitude}, {odp.longitude}
+          </div>
+          <div className="text-[11px] text-slate-300 mt-1">
+            Kapasitas Splitter: <b>{odp.port_terpakai ?? 0} / {odp.kapasitas_port || 8} Port</b>
+          </div>
+        </div>
+        <a
+          href={`https://www.google.com/maps?q=${odp.latitude},${odp.longitude}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md"
+        >
+          <Navigation className="w-4 h-4" />
+          <span>Panduan Rute Google Maps</span>
+        </a>
+      </div>
+
+      {/* 4 Poin Checklist Kesehatan Fisik ODP */}
+      <div className="space-y-4 pt-1">
         {OPSI_KONDISI.map((p) => (
-          <div key={p.key} className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              {p.label}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+          <div key={p.key} className="space-y-1.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60">
+            <div>
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                {p.label}
+              </label>
+              <p className="text-[11px] text-slate-400">{p.subtitle}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-1">
               {p.opsi.map(([val, teks]) => {
                 const aktif = nilai[p.key] === val;
                 return (
@@ -120,14 +185,14 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
                     type="button"
                     key={val}
                     onClick={() => setNilai({ ...nilai, [p.key]: val })}
-                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                       aktif
                         ? val === 1
                           ? 'bg-emerald-500 text-white shadow-md'
                           : val === 2
                           ? 'bg-amber-500 text-slate-950 shadow-md'
                           : 'bg-red-600 text-white shadow-md'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     {aktif && <Check className="w-3.5 h-3.5" />}
@@ -140,25 +205,28 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
         ))}
       </div>
 
+      {/* Unggah Foto Eviden Lapangan */}
       <div className="space-y-1.5">
         <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-          5. Foto Eviden Lapangan (Kondisi Boks / Port)
+          5. Foto Eviden Fisik Lapangan (Wajib)
         </label>
         <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 transition bg-slate-50/50 dark:bg-slate-800/40">
           {preview ? (
             <div className="relative">
-              <img src={preview} alt="Preview" className="max-h-48 rounded-xl object-contain shadow-md" />
-              <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-md">
-                Klik untuk ganti foto
+              <img src={preview} alt="Preview Eviden" className="max-h-56 rounded-xl object-contain shadow-md" />
+              <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-3 py-1 rounded-lg">
+                Klik untuk ganti foto eviden
               </span>
             </div>
           ) : (
-            <div className="flex flex-col items-center space-y-1 text-slate-400 py-3">
-              <Camera className="w-8 h-8 text-[#ED1C24]" />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Ambil / Pilih Foto Eviden
+            <div className="flex flex-col items-center space-y-1.5 text-slate-400 py-4">
+              <div className="p-3 rounded-full bg-red-500/10 text-[#ED1C24]">
+                <Camera className="w-8 h-8" />
+              </div>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Ambil Foto Kamera / Pilih dari Galeri
               </span>
-              <span className="text-[10px]">Kamera ponsel atau galeri (Maksimal 5 MB)</span>
+              <span className="text-[11px] text-slate-400">Pastikan foto jelas menampilkan boks ODP / susunan splitter</span>
             </div>
           )}
           <input
@@ -171,20 +239,41 @@ function FormChecklistAudit({ tiketId, odp, onSelesai, onBatal }) {
         </label>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 pt-2">
+      {/* Catatan Lapangan Opsional */}
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          Catatan Tambahan Teknisi (Opsional)
+        </label>
+        <textarea
+          rows={2}
+          placeholder="Contoh: Boks sudah dirapikan, konektor port 4 dibersihkan dari debu..."
+          value={catatan}
+          onChange={(e) => setCatatan(e.target.value)}
+          className="w-full rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 text-xs outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-100"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 pt-2">
         <button
           type="button"
           onClick={onBatal}
-          className="rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition cursor-pointer"
+          className="rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 transition cursor-pointer"
         >
           Batal
         </button>
         <button
           disabled={!lengkap || loading}
           onClick={handleSubmit}
-          className="col-span-2 rounded-2xl py-2.5 text-xs font-bold text-white shadow-xl transition active:scale-95 disabled:opacity-50 bg-[#ED1C24] hover:bg-red-700 cursor-pointer"
+          className="col-span-2 rounded-2xl py-3 text-xs font-bold text-white shadow-xl transition active:scale-95 disabled:opacity-50 bg-[#ED1C24] hover:bg-red-700 cursor-pointer flex items-center justify-center gap-2"
         >
-          {loading ? 'Mengirim Hasil Audit & Menghitung Grading...' : 'Kirim Hasil Audit & Sinkronisasi'}
+          {loading ? (
+            <span>Menyimpan & Menghitung Grading...</span>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Selesaikan Audit & Simpan Laporan</span>
+            </>
+          )}
         </button>
       </div>
     </Tilt3DCard>
@@ -403,140 +492,175 @@ export default function TugasTeknisi() {
       )}
 
       {/* 3. Detail View Tiket & Daftar ODP */}
-      {aktifTiket && !odpDipilih && (
-        <div className="rounded-3xl glass-panel p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
-            <button
-              onClick={() => {
-                setAktifTiket(null);
-                setOdpDipilih(null);
-                muatData();
-              }}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Daftar Tugas</span>
-            </button>
+      {aktifTiket && !odpDipilih && (() => {
+        const totalOdp = aktifTiket.odp?.length || 0;
+        const auditedCount = aktifTiket.odp?.filter((o) => !!o.audit).length || 0;
+        const isTiketSelesai = aktifTiket.tiket.status_tiket === 'Selesai' || (totalOdp > 0 && auditedCount >= totalOdp);
 
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-              Status: {aktifTiket.tiket.status_tiket}
-            </span>
-          </div>
-
-          <div>
-            <h2 className="text-base font-black text-slate-800 dark:text-slate-100">
-              Tiket #{aktifTiket.tiket.id} · Klaster {aktifTiket.area_name || aktifTiket.tiket.area_name || aktifTiket.tiket.area_klaster}
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Silakan periksa kondisi tiang, boks, kabel, dan port pada setiap titik ODP di bawah sesuai rute tugas.
-            </p>
-          </div>
-
-          {/* Rute Inspection Banner */}
-          {Array.isArray(aktifTiket.rute) && aktifTiket.rute.length > 0 && (
-            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                <div className="flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5 text-[#ED1C24]" />
-                  <span>Rute Pengerjaan Sesuai Penugasan:</span>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-semibold">Ikuti sesuai urutan langkah</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
-                {aktifTiket.rute.map((kode, idx) => (
-                  <div key={kode} className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-white border border-slate-700 flex items-center gap-1.5 shadow-sm">
-                      <span className="w-4 h-4 rounded-full bg-[#ED1C24] text-white text-[9px] font-black flex items-center justify-center">
-                        {idx + 1}
-                      </span>
-                      <b className="text-white text-[11px]">{kode}</b>
-                    </span>
-                    {idx < aktifTiket.rute.length - 1 && <span className="text-red-500 font-bold">➔</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Pending Action: Mulai Tugas */}
-          {aktifTiket.tiket.status_tiket === 'Pending' && (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 space-y-2">
-              <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                Tiket ini belum dimulai. Tekan tombol di bawah saat Anda sudah siap di lokasi patroli.
-              </p>
+        return (
+          <div className="rounded-3xl glass-panel p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
               <button
-                onClick={() => handleMulaiTiket(aktifTiket.tiket.id)}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl py-2.5 text-xs font-bold text-white shadow-md transition bg-[#ED1C24] hover:bg-red-700 cursor-pointer"
+                onClick={() => {
+                  setAktifTiket(null);
+                  setOdpDipilih(null);
+                  muatData();
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
               >
-                <Play className="w-4 h-4" />
-                <span>Mulai Kerjakan Tugas Ini</span>
+                <ArrowLeft className="w-4 h-4" />
+                <span>Kembali ke Daftar Tugas</span>
               </button>
+
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                isTiketSelesai
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+              }`}>
+                Status: {isTiketSelesai ? 'Selesai' : aktifTiket.tiket.status_tiket}
+              </span>
             </div>
-          )}
 
-          {/* List of ODPs to audit */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Daftar Titik ODP ({aktifTiket.odp.length})
-            </h4>
+            <div>
+              <h2 className="text-base font-black text-slate-800 dark:text-slate-100">
+                Tiket #{aktifTiket.tiket.id} · Klaster {aktifTiket.area_name || aktifTiket.tiket.area_name || aktifTiket.tiket.area_klaster}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Periksa kondisi tiang, boks, kabel, dan port splitter pada setiap titik ODP di bawah sesuai rute tugas.
+              </p>
+            </div>
 
-            {aktifTiket.odp.map((o) => {
-              const sudahAudit = !!o.audit;
-              const bisaAudit = aktifTiket.tiket.status_tiket === 'In Progress' && !sudahAudit;
+            {/* Banner Sukses Jika Semua ODP Selesai */}
+            {isTiketSelesai && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-400 space-y-1.5 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 text-sm font-black text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  <span>Tugas Tiket Patroli Telah Rampung 100%!</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Seluruh {totalOdp} titik ODP telah berhasil divalidasi dan bukti foto tersimpan aman. Tiket ini telah ditandai Selesai dan dilaporkan otomatis ke grup Telegram STO.
+                </p>
+              </div>
+            )}
 
-              return (
-                <Tilt3DCard
-                  key={o.id}
-                  className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#ED1C24] text-white text-[10px] font-black flex items-center justify-center">
-                        {o.urutan_rute || '•'}
+            {/* Progres Validasi Bar */}
+            <div className="space-y-1.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span>Progres Validasi ODP</span>
+                <span>{auditedCount} dari {totalOdp} Selesai ({Math.round((auditedCount / (totalOdp || 1)) * 100)}%)</span>
+              </div>
+              <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300 bg-emerald-500"
+                  style={{ width: `${Math.round((auditedCount / (totalOdp || 1)) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Rute Inspection Banner */}
+            {Array.isArray(aktifTiket.rute) && aktifTiket.rute.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <div className="flex items-center gap-1.5">
+                    <Navigation className="w-3.5 h-3.5 text-[#ED1C24]" />
+                    <span>Rute Pengerjaan Sesuai Penugasan:</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-semibold">Ikuti sesuai urutan langkah</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                  {aktifTiket.rute.map((kode, idx) => (
+                    <div key={kode} className="flex items-center gap-1.5">
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-white border border-slate-700 flex items-center gap-1.5 shadow-sm">
+                        <span className="w-4 h-4 rounded-full bg-[#ED1C24] text-white text-[9px] font-black flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <b className="text-white text-[11px]">{kode}</b>
                       </span>
-                      <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{o.kode_odp}</span>
+                      {idx < aktifTiket.rute.length - 1 && <span className="text-red-500 font-bold">➔</span>}
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${WARNA_STATUS[o.audit?.status_akhir || o.status_fisik] || 'text-slate-400'}`}>
-                      {o.audit?.status_akhir || o.status_fisik}
-                    </span>
-                  </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  <p className="text-slate-500 dark:text-slate-400">{o.alamat}</p>
+            {/* List of ODPs to audit */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Daftar Titik ODP Target ({aktifTiket.odp.length})
+              </h4>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <a
-                      href={`https://www.google.com/maps?q=${o.latitude},${o.longitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 rounded-xl bg-slate-200 dark:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition"
-                    >
-                      <Navigation className="w-3 h-3" />
-                      <span>Petunjuk Arah</span>
-                    </a>
+              {aktifTiket.odp.map((o) => {
+                const sudahAudit = !!o.audit;
+                const bisaAudit = !sudahAudit && !isTiketSelesai;
 
-                    {sudahAudit ? (
-                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 text-xs font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Sudah Diaudit</span>
+                return (
+                  <Tilt3DCard
+                    key={o.id}
+                    className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#ED1C24] text-white text-[10px] font-black flex items-center justify-center">
+                          {o.urutan_rute || '•'}
+                        </span>
+                        <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{o.kode_odp}</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                        WARNA_STATUS[o.audit?.status_akhir || o.status_fisik] || 'text-slate-400 border-slate-300'
+                      }`}>
+                        {o.audit?.status_akhir ? `Audit: ${o.audit.status_akhir}` : (o.status_fisik || 'Belum Diaudit')}
                       </span>
-                    ) : (
-                      bisaAudit && (
-                        <button
-                          onClick={() => setOdpDipilih(o)}
-                          className="flex items-center gap-1 rounded-xl text-white px-4 py-1.5 text-xs font-bold shadow-md transition active:scale-95 bg-[#ED1C24] hover:bg-red-700 cursor-pointer"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>Audit ODP Ini</span>
-                        </button>
-                      )
-                    )}
-                  </div>
-                </Tilt3DCard>
-              );
-            })}
+                    </div>
+
+                    <p className="text-slate-600 dark:text-slate-300 font-medium">{o.alamat}</p>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <a
+                        href={`https://www.google.com/maps?q=${o.latitude},${o.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Panduan Rute Maps</span>
+                      </a>
+
+                      {sudahAudit ? (
+                        <div className="flex items-center gap-2">
+                          {o.audit?.foto_bukti && (
+                            <a
+                              href={o.audit.foto_bukti}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-bold text-blue-500 hover:underline"
+                            >
+                              Lihat Eviden
+                            </a>
+                          )}
+                          <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 text-xs font-bold border border-emerald-300 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Sudah Diaudit</span>
+                          </span>
+                        </div>
+                      ) : (
+                        bisaAudit && (
+                          <button
+                            onClick={() => setOdpDipilih(o)}
+                            className="flex items-center gap-1.5 rounded-xl text-white px-4 py-2 text-xs font-bold shadow-md transition active:scale-95 bg-[#ED1C24] hover:bg-red-700 cursor-pointer"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Cek Kesehatan & Audit ODP</span>
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </Tilt3DCard>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 4. Form Checklist Active View */}
       {aktifTiket && odpDipilih && (
