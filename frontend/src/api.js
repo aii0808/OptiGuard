@@ -1,30 +1,23 @@
-export function getApiBase() {
-  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'http://localhost:4000') {
-    return import.meta.env.VITE_API_URL;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://optiguard-backend-987q.vercel.app';
-  }
-  return import.meta.env.VITE_API_URL || 'http://localhost:4000';
-}
-
 export async function api(path, { method = 'GET', body, form } = {}) {
-  const BASE = getApiBase();
+  // Always use unified relative /api path (works on Vercel same-origin & Vite dev proxy)
+  const endpoint = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : '/' + path}`;
+  
   const headers = {};
   const token = localStorage.getItem('og_token');
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let payload;
-  if (form) payload = form;
-  else if (body) {
+  if (form) {
+    payload = form;
+  } else if (body) {
     headers['Content-Type'] = 'application/json';
     payload = JSON.stringify(body);
   }
 
-  const res = await fetch(BASE + path, { method, headers, body: payload });
+  const res = await fetch(endpoint, { method, headers, body: payload });
   const data = await res.json().catch(() => ({}));
 
-  if (res.status === 401 && path !== '/auth/login') {
+  if (res.status === 401 && !path.includes('/auth/login')) {
     localStorage.removeItem('og_token');
     localStorage.removeItem('og_user');
     window.location.href = '/login';
