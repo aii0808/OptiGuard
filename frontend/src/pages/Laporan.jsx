@@ -5,25 +5,58 @@ import {
   Calendar,
   Filter,
   Search,
-  ExternalLink,
-  ShieldCheck,
   CheckCircle,
   AlertTriangle,
   AlertCircle,
   MapPin,
   User,
+  ShieldCheck,
+  ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
-import Logo from '../components/Logo.jsx';
 
 const WARNA_STATUS = {
-  Aman: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
-  Normal: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
-  Warning: 'text-[#F59E0B] bg-amber-100 dark:bg-amber-950/60 dark:text-amber-400',
-  Critical: 'text-[#ED1C24] bg-red-100 dark:bg-red-950/60 dark:text-red-400',
+  Aman: 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700',
+  Normal: 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700',
+  Warning: 'text-amber-700 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700',
+  Critical: 'text-red-700 bg-red-100 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-700',
 };
+
+/**
+ * Format physical inspection components to natural descriptive technical Indonesian
+ * (Never display raw numbers 1, 2, 3!)
+ */
+export function formatKondisiTeks(komponen, nilai) {
+  const n = Number(nilai);
+  if (komponen === 'tiang') {
+    if (n === 1) return 'Aman / Kokoh';
+    if (n === 2) return 'Miring / Keropos Ringan';
+    if (n === 3) return 'Keropos Parah / Patah';
+    return typeof nilai === 'string' && nilai ? nilai : 'Aman / Kokoh';
+  }
+  if (komponen === 'boks') {
+    if (n === 1) return 'Aman / Terkunci Rapat';
+    if (n === 2) return 'Kunci Rusak / Pengait Lepas';
+    if (n === 3) return 'Pintu Terbuka / Boks Pecah';
+    return typeof nilai === 'string' && nilai ? nilai : 'Aman / Terkunci Rapat';
+  }
+  if (komponen === 'kabel') {
+    if (n === 1) return 'Rapi & Terpasang Aman';
+    if (n === 2) return 'Kendur / Menjuntai';
+    if (n === 3) return 'Terkelupas / Putus';
+    return typeof nilai === 'string' && nilai ? nilai : 'Rapi & Aman';
+  }
+  if (komponen === 'port') {
+    if (n === 1) return 'Bersih & Normal';
+    if (n === 2) return 'Berdebu / Perlu Cleaning';
+    if (n === 3) return 'Kotor / Rusak / Loss Tinggi';
+    return typeof nilai === 'string' && nilai ? nilai : 'Bersih & Normal';
+  }
+  return String(nilai || '-');
+}
 
 export default function Laporan() {
   const { user } = useAuth();
@@ -31,9 +64,9 @@ export default function Laporan() {
   const primaryColor = theme?.accent?.primary || theme?.primaryColor || '#ED1C24';
   const [laporan, setLaporan] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTiketId, setSelectedTiketId] = useState('all');
   const [filterArea, setFilterArea] = useState('Semua');
   const [cariOdp, setCariOdp] = useState('');
-  const [previewTiketId, setPreviewTiketId] = useState(null);
 
   useEffect(() => {
     async function muat() {
@@ -49,6 +82,39 @@ export default function Laporan() {
     muat();
   }, []);
 
+  // Group audits by ticket to allow selecting individual finished tickets
+  const daftarTiketSelesai = useMemo(() => {
+    const map = new Map();
+    laporan.forEach((r) => {
+      if (!map.has(r.tiket_id)) {
+        map.set(r.tiket_id, {
+          tiket_id: r.tiket_id,
+          area_klaster: r.area_klaster,
+          rute: r.rute,
+          tanggal_tugas: r.tanggal_tugas,
+          status_tiket: r.status_tiket,
+          teknisi_nama: r.teknisi_nama,
+          pimpinan_nama: r.pimpinan_nama,
+          items: [],
+        });
+      }
+      map.get(r.tiket_id).items.push(r);
+    });
+    return Array.from(map.values()).sort((a, b) => b.tiket_id - a.tiket_id);
+  }, [laporan]);
+
+  // If initial load and tickets exist, default selected ticket to the latest one
+  useEffect(() => {
+    if (daftarTiketSelesai.length > 0 && selectedTiketId === 'all') {
+      setSelectedTiketId(String(daftarTiketSelesai[0].tiket_id));
+    }
+  }, [daftarTiketSelesai]);
+
+  const activeTiketInfo = useMemo(() => {
+    if (selectedTiketId === 'all') return null;
+    return daftarTiketSelesai.find((t) => String(t.tiket_id) === String(selectedTiketId)) || null;
+  }, [daftarTiketSelesai, selectedTiketId]);
+
   const areas = useMemo(() => {
     const set = new Set();
     laporan.forEach((r) => { if (r.area_klaster) set.add(r.area_klaster); });
@@ -57,18 +123,18 @@ export default function Laporan() {
 
   const filtered = useMemo(() => {
     return laporan.filter((r) => {
+      const matchTiket = selectedTiketId === 'all' || String(r.tiket_id) === String(selectedTiketId);
       const matchArea = filterArea === 'Semua' || r.area_klaster === filterArea;
       const matchOdp = !cariOdp || r.odp?.kode_odp?.toLowerCase().includes(cariOdp.toLowerCase());
-      const matchTiket = !previewTiketId || r.tiket_id === previewTiketId;
-      return matchArea && matchOdp && matchTiket;
+      return matchTiket && matchArea && matchOdp;
     });
-  }, [laporan, filterArea, cariOdp, previewTiketId]);
+  }, [laporan, selectedTiketId, filterArea, cariOdp]);
 
   function triggerCetak() {
     window.print();
   }
 
-  // Get current date string for document
+  // Indonesian formal date
   const todayStr = new Date().toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -77,69 +143,92 @@ export default function Laporan() {
 
   return (
     <div className="space-y-6">
-      {/* Printable Area Container */}
+      {/* Printable Area Wrapper */}
       <div className="print-area">
-        {/* Header Resmi Kop Surat (Hanya Tampil Saat Cetak atau Preview Mode) */}
-        <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
+        {/* Kop Surat Resmi PT Telkom Akses (Hanya Tampil Saat Dicetak) */}
+        <div className="hidden print:block border-b-2 border-slate-900 pb-3 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center text-white font-black text-xl">
+              <div className="w-12 h-12 bg-[#ED1C24] text-white flex items-center justify-center font-black text-xl rounded-lg border border-red-700">
                 TA
               </div>
               <div>
-                <h1 className="text-lg font-black tracking-tight text-slate-900 uppercase">
+                <h1 className="text-base font-black tracking-tight text-slate-950 uppercase leading-tight">
                   PT TELKOM AKSES · STO PAYAKUMBUH
                 </h1>
-                <p className="text-xs text-slate-600">
-                  Sub Regional Sumatera Barat · Jl. Jenderal Sudirman No. 12, Payakumbuh
+                <p className="text-[11px] font-semibold text-slate-700 leading-tight">
+                  KANTOR DAERAH TELEKOMUNIKASI (DATEL) PAYAKUMBUH — WITEL SUMATERA BARAT
                 </p>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  Sistem Informasi Validasi Instalasi & Preventive Maintenance ODP (OptiGuard)
+                <p className="text-[9px] text-slate-600">
+                  Jl. Jenderal Sudirman No. 12, Benteng, Kec. Payakumbuh Barat, Kota Payakumbuh | Telp: (0752) 92000
                 </p>
               </div>
             </div>
-            <div className="text-right text-xs text-slate-700">
-              <div className="font-bold">BERITA ACARA LAPORAN PATROLI</div>
-              <div className="text-[11px]">Tanggal Cetak: {todayStr}</div>
-              <div className="text-[10px] font-mono">Dok: BA-VALINS-{Date.now().toString().slice(-6)}</div>
+            <div className="text-right text-[10px] text-slate-800 leading-tight">
+              <div className="font-extrabold text-[11px] uppercase tracking-wider text-slate-950">
+                BERITA ACARA AUDIT (BAPP)
+              </div>
+              <div>Tanggal Cetak: <b>{todayStr}</b></div>
+              <div className="font-mono text-[9px] text-slate-600">
+                No: BA.VALINS/TA-PYK/{activeTiketInfo ? activeTiketInfo.tiket_id : 'REKAP'}/{new Date().getFullYear()}
+              </div>
             </div>
           </div>
+          <div className="mt-2 h-0.5 bg-slate-900 w-full" />
         </div>
 
         {/* Action Bar (No Print) */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white dark:bg-slate-900/90 p-5 border border-slate-200 dark:border-slate-800 shadow-sm no-print">
           <div>
             <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <FileText className="w-5 h-5" style={{ color: primaryColor }} />
-              <span>Laporan Berita Acara Pekerjaan & Preventive Maintenance</span>
+              <FileText className="w-5 h-5 text-[#ED1C24]" />
+              <span>Cetak Berita Acara & Laporan Pekerjaan Lapangan</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Dokumentasi hasil audit kelayakan fisik ODP siap cetak dengan kop surat, border, dan pengesahan resmi
+              Pilih tiket penugasan selesai untuk mencetak Berita Acara resmi 1 halaman A4 lengkap dengan kop instansi dan tanda tangan
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={triggerCetak}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-lg transition active:scale-95 cursor-pointer"
-              style={{ backgroundColor: primaryColor }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white shadow-lg shadow-red-600/20 transition active:scale-95 cursor-pointer bg-[#ED1C24] hover:bg-red-700"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Export PDF Berita Acara</span>
+              <span>Cetak PDF Berita Acara (1 Halaman A4)</span>
             </button>
           </div>
         </div>
 
         {/* Filter Controls (No Print) */}
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 no-print">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 no-print mt-4">
+          {/* Ticket Selector Dropdown */}
+          <div className="flex items-center gap-2 min-w-[260px] flex-1">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
+              Pilih Tiket Berita Acara:
+            </span>
+            <select
+              value={selectedTiketId}
+              onChange={(e) => setSelectedTiketId(e.target.value)}
+              className="flex-1 rounded-xl border border-red-500/50 bg-red-50/50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="all">-- Semua Laporan Audit Lapangan (Rekap Global) --</option>
+              {daftarTiketSelesai.map((t) => (
+                <option key={t.tiket_id} value={String(t.tiket_id)}>
+                  Tiket #{t.tiket_id} — Klaster {t.area_klaster} ({t.items.length} ODP) — Teknisi: {t.teknisi_nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative min-w-[180px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari berdasarkan Kode ODP..."
+              placeholder="Cari Kode ODP..."
               value={cariOdp}
               onChange={(e) => setCariOdp(e.target.value)}
-              className="w-full rounded-xl bg-slate-50 dark:bg-slate-800 pl-10 pr-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+              className="w-full rounded-xl bg-slate-50 dark:bg-slate-800 pl-9 pr-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
             />
           </div>
 
@@ -155,97 +244,165 @@ export default function Laporan() {
               ))}
             </select>
           </div>
-
-          {previewTiketId && (
-            <button
-              onClick={() => setPreviewTiketId(null)}
-              className="text-xs font-bold text-red-500 hover:underline"
-            >
-              Tampilkan Semua Tiket (Reset Filter)
-            </button>
-          )}
         </div>
 
-        {/* Report Table / Documents */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-4">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
+        {/* Informasi Berita Acara Tiket Terpilih (Tampil di Print dan di Web) */}
+        {activeTiketInfo && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 space-y-1.5 print:bg-white print:border-slate-800 print:p-2.5 print:text-[10px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:gap-2">
+              <div>
+                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                  Nomor Tiket
+                </span>
+                <span className="font-extrabold text-sm text-[#ED1C24] print:text-slate-950 font-mono">
+                  #{activeTiketInfo.tiket_id}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                  Wilayah Klaster
+                </span>
+                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                  {activeTiketInfo.area_klaster}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                  Teknisi Pelaksana
+                </span>
+                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                  {activeTiketInfo.teknisi_nama}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 print:text-slate-700 block text-[10px] uppercase font-bold">
+                  Pimpinan / Penugas
+                </span>
+                <span className="font-bold text-slate-900 dark:text-white print:text-slate-950">
+                  {activeTiketInfo.pimpinan_nama}
+                </span>
+              </div>
+            </div>
+
+            {activeTiketInfo.rute && (
+              <div className="pt-1 border-t border-slate-200 dark:border-slate-700 print:border-slate-300">
+                <span className="text-[10px] font-bold text-slate-500 print:text-slate-700 mr-2">
+                  Urutan Rute Kerja:
+                </span>
+                <span className="font-mono text-[11px] print:text-[9.5px] font-semibold text-slate-800 dark:text-slate-200 print:text-slate-950">
+                  {activeTiketInfo.rute}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tabel Rincian Hasil Audit Lapangan (Full Descriptive, No Numbers 1, 2, 3!) */}
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-4 print:border-slate-800 print:rounded-none print:shadow-none">
+          <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
             <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-              Rincian Hasil Audit Lapangan ({filtered.length} Data)
+              Rincian Kondisi Fisik Lapangan ({filtered.length} Titik ODP)
             </h3>
           </div>
 
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-xs text-slate-400">
-              {loading ? 'Memuat data laporan...' : 'Belum ada riwayat audit yang selesai pada filter ini.'}
+              {loading ? 'Memuat data laporan...' : 'Belum ada riwayat audit yang selesai pada tiket ini.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse print:text-[9.5px]">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="p-3">No. Tiket / Tanggal</th>
-                    <th className="p-3">Kode ODP & Klaster</th>
-                    <th className="p-3">Teknisi Pelaksana</th>
-                    <th className="p-3">Checklist (Tiang / Boks / Kabel / Port)</th>
-                    <th className="p-3">Status Akhir</th>
-                    <th className="p-3">Foto Eviden</th>
+                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px] tracking-wider print:bg-slate-200 print:text-slate-900">
+                    <th className="p-2.5 print:p-1.5 w-10">No</th>
+                    <th className="p-2.5 print:p-1.5">Kode ODP & Lokasi</th>
+                    <th className="p-2.5 print:p-1.5">Utilisasi Port</th>
+                    <th className="p-2.5 print:p-1.5">Kondisi Fisik Lapangan</th>
+                    <th className="p-2.5 print:p-1.5">Status Kelayakan</th>
+                    <th className="p-2.5 print:p-1.5 text-center">Foto Eviden</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 print:divide-slate-300">
                   {filtered.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                      <td className="p-3 align-top font-medium">
-                        <div className="font-bold text-slate-900 dark:text-slate-100">
-                          #{item.tiket_id}
+                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition print:break-inside-avoid">
+                      <td className="p-2.5 print:p-1.5 font-bold text-slate-500 print:text-slate-800 align-top">
+                        {idx + 1}
+                      </td>
+
+                      <td className="p-2.5 print:p-1.5 align-top">
+                        <div className="font-extrabold text-slate-900 dark:text-slate-100 print:text-slate-950">
+                          {item.odp.kode_odp}
                         </div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-[11px] print:text-[9px] text-slate-600 dark:text-slate-400 print:text-slate-700 leading-tight">
+                          {item.odp.alamat}
+                        </div>
+                        <div className="text-[10px] print:text-[8.5px] text-slate-500 font-semibold mt-0.5">
+                          Klaster: {item.area_klaster}
+                        </div>
+                      </td>
+
+                      <td className="p-2.5 print:p-1.5 align-top">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200 print:text-slate-900">
+                          {item.odp.port_terpakai ?? 0} / {item.odp.kapasitas_port || 8} Port
+                        </div>
+                        <div className="text-[10px] print:text-[8.5px] text-slate-500">
+                          Sisa: {Math.max(0, (item.odp.kapasitas_port || 8) - (item.odp.port_terpakai ?? 0))} Kosong
+                        </div>
+                      </td>
+
+                      {/* Deskripsi Fisik Jelas - Tidak Menggunakan Angka 1, 2, 3! */}
+                      <td className="p-2.5 print:p-1.5 align-top space-y-0.5 text-[11px] print:text-[9px]">
+                        <div>
+                          <span className="text-slate-500 font-semibold">Tiang:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                            {formatKondisiTeks('tiang', item.kondisi.tiang)}
+                          </b>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-semibold">Boks ODP:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                            {formatKondisiTeks('boks', item.kondisi.boks)}
+                          </b>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-semibold">Kabel:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                            {formatKondisiTeks('kabel', item.kondisi.kabel)}
+                          </b>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-semibold">Port Splitter:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                            {formatKondisiTeks('port', item.kondisi.port)}
+                          </b>
+                        </div>
+                      </td>
+
+                      <td className="p-2.5 print:p-1.5 align-top">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-[10px] print:text-[9px] font-black border uppercase tracking-wider ${
+                            WARNA_STATUS[item.status_akhir] || 'text-slate-700 bg-slate-100 border-slate-300'
+                          }`}
+                        >
+                          {item.status_akhir}
+                        </span>
+                        <div className="text-[9px] text-slate-500 print:text-slate-600 mt-1">
                           {new Date(item.waktu_audit).toLocaleDateString('id-ID')}
                         </div>
                       </td>
 
-                      <td className="p-3 align-top">
-                        <div className="font-bold text-slate-900 dark:text-slate-100">
-                          {item.odp.kode_odp}
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {item.odp.alamat} (Area: {item.area_klaster})
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Port: {item.odp.port_terpakai ?? 0} / {item.odp.kapasitas_port}
-                        </div>
-                      </td>
-
-                      <td className="p-3 align-top">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200">
-                          {item.teknisi_nama}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Penugas: {item.pimpinan_nama}
-                        </div>
-                      </td>
-
-                      <td className="p-3 align-top font-mono text-[11px]">
-                        <div>Tiang: {item.kondisi.tiang === 1 ? 'Aman' : item.kondisi.tiang === 2 ? 'Rusak Ringan' : 'Rusak Berat'}</div>
-                        <div>Boks: {item.kondisi.boks === 1 ? 'Aman' : item.kondisi.boks === 2 ? 'Rusak Ringan' : 'Rusak Berat'}</div>
-                        <div>Kabel: {item.kondisi.kabel === 1 ? 'Rapi' : item.kondisi.kabel === 2 ? 'Kendur' : 'Rusak'}</div>
-                        <div>Port: {item.kondisi.port === 1 ? 'Bersih' : item.kondisi.port === 2 ? 'Berdebu' : 'Kotor/Rusak'}</div>
-                      </td>
-
-                      <td className="p-3 align-top">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${WARNA_STATUS[item.status_akhir] || 'text-slate-400'}`}>
-                          {item.status_akhir}
-                        </span>
-                      </td>
-
-                      <td className="p-3 align-top">
+                      <td className="p-2.5 print:p-1.5 align-top text-center">
                         {item.foto_bukti ? (
-                          <a href={item.foto_bukti} target="_blank" rel="noreferrer">
+                          <div className="inline-block">
                             <img
                               src={item.foto_bukti}
-                              alt="Eviden"
-                              className="w-14 h-14 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shadow-sm"
+                              alt="Eviden Lapangan"
+                              className="w-14 h-14 print:w-12 print:h-12 rounded-lg object-cover border border-slate-300 print:border-slate-800 shadow-sm mx-auto"
                             />
-                          </a>
+                            <span className="block text-[8px] text-slate-500 print:text-slate-700 mt-0.5">
+                              Eviden Fisik
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-slate-400 text-[10px] italic">Tidak ada foto</span>
                         )}
@@ -258,28 +415,39 @@ export default function Laporan() {
           )}
         </div>
 
-        {/* Lembar Tanda Tangan Resmi (Tampil Saat Dicetak) */}
-        <div className="hidden print:block mt-12 pt-6 border-t border-slate-400 text-xs text-slate-900">
-          <div className="grid grid-cols-2 gap-8 text-center">
-            <div className="space-y-16">
+        {/* Pernyataan Penutup Dokumen Resmi */}
+        <div className="hidden print:block mt-3 text-[9.5px] text-slate-700 leading-relaxed italic">
+          Demikian Berita Acara Pemeriksaan Pekerjaan & Validasi Instalasi ODP ini dibuat dengan sebenar-benarnya sesuai dengan kondisi fisik riil di lapangan untuk dipergunakan sebagaimana mestinya.
+        </div>
+
+        {/* Lembar Tanda Tangan Resmi (1 Halaman A4) */}
+        <div className="hidden print:block mt-8 pt-4 border-t border-slate-800 text-[10px] text-slate-950">
+          <div className="grid grid-cols-2 gap-10 text-center">
+            {/* Pelaksana Lapangan */}
+            <div className="space-y-12">
               <div>
-                <p className="font-semibold">Mengetahui & Menyetujui,</p>
-                <p className="text-slate-600">Pimpinan / Koordinator STO Payakumbuh</p>
+                <p className="font-semibold text-slate-800">Pelaksana Lapangan,</p>
+                <p className="text-[9px] text-slate-600">Teknisi Patroli Preventive Maintenance</p>
               </div>
               <div>
-                <p className="font-bold underline uppercase">( Robby Permana Putra )</p>
-                <p className="text-[10px] text-slate-500">NIK. 89201928 / STO Payakumbuh</p>
+                <p className="font-extrabold underline uppercase">
+                  ( {activeTiketInfo ? activeTiketInfo.teknisi_nama : (user.nama || 'Teknisi Patroli')} )
+                </p>
+                <p className="text-[9px] text-slate-600">Petugas Valins STO Payakumbuh</p>
               </div>
             </div>
 
-            <div className="space-y-16">
+            {/* Pimpinan STO */}
+            <div className="space-y-12">
               <div>
-                <p className="font-semibold">Pelaksana Lapangan,</p>
-                <p className="text-slate-600">Teknisi Patroli Preventive Maintenance</p>
+                <p className="font-semibold text-slate-800">Mengetahui & Menyetujui,</p>
+                <p className="text-[9px] text-slate-600">Pimpinan / Koordinator STO Payakumbuh</p>
               </div>
               <div>
-                <p className="font-bold underline uppercase">( {user.nama || 'Teknisi Patroli'} )</p>
-                <p className="text-[10px] text-slate-500">Petugas Valins Lapangan</p>
+                <p className="font-extrabold underline uppercase">
+                  ( {activeTiketInfo ? activeTiketInfo.pimpinan_nama : 'Robby Permana Putra'} )
+                </p>
+                <p className="text-[9px] text-slate-600">NIK. 89201928 / STO Payakumbuh</p>
               </div>
             </div>
           </div>

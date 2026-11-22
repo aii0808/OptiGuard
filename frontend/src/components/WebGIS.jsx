@@ -17,6 +17,38 @@ import {
 import { useAuth } from '../auth.jsx';
 
 /**
+ * Helper to display human-readable physical inspection status without numeric codes 1, 2, 3
+ */
+export function formatKondisiTeks(komponen, nilai) {
+  const n = Number(nilai);
+  if (komponen === 'tiang') {
+    if (n === 1) return 'Aman / Kokoh';
+    if (n === 2) return 'Miring / Karatan';
+    if (n === 3) return 'Keropos / Patah';
+    return typeof nilai === 'string' && nilai ? nilai : 'Aman';
+  }
+  if (komponen === 'boks') {
+    if (n === 1) return 'Aman / Terkunci Rapat';
+    if (n === 2) return 'Kunci Rusak / Pengait Lepas';
+    if (n === 3) return 'Pintu Terbuka / Pecah';
+    return typeof nilai === 'string' && nilai ? nilai : 'Aman';
+  }
+  if (komponen === 'kabel') {
+    if (n === 1) return 'Rapi & Aman';
+    if (n === 2) return 'Kendur / Menjuntai';
+    if (n === 3) return 'Terkelupas / Putus';
+    return typeof nilai === 'string' && nilai ? nilai : 'Rapi';
+  }
+  if (komponen === 'port') {
+    if (n === 1) return 'Bersih & Normal';
+    if (n === 2) return 'Berdebu / Perlu Cleaning';
+    if (n === 3) return 'Kotor / Rusak / Loss';
+    return typeof nilai === 'string' && nilai ? nilai : 'Bersih';
+  }
+  return String(nilai || '-');
+}
+
+/**
  * Creates a distinct map pin marker with an isometric 3D wireframe cube inside (Gambar 2).
  * Teardrop pin with crisp 2.5px white border and 3D cube center.
  */
@@ -312,10 +344,10 @@ export default function WebGIS({ odpList = [], loading = false, onRefresh, lastS
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-700 dark:text-slate-300">
-                          <div>Tiang: <b className="text-slate-900 dark:text-white">{o.audit_terakhir.kondisi_tiang}</b></div>
-                          <div>Boks: <b className="text-slate-900 dark:text-white">{o.audit_terakhir.kondisi_boks}</b></div>
-                          <div>Kabel: <b className="text-slate-900 dark:text-white">{o.audit_terakhir.kondisi_kabel}</b></div>
-                          <div>Port: <b className="text-slate-900 dark:text-white">{o.audit_terakhir.kondisi_port}</b></div>
+                          <div>Tiang: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('tiang', o.audit_terakhir.kondisi_tiang)}</b></div>
+                          <div>Boks: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('boks', o.audit_terakhir.kondisi_boks)}</b></div>
+                          <div>Kabel: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('kabel', o.audit_terakhir.kondisi_kabel)}</b></div>
+                          <div>Port: <b className="text-slate-900 dark:text-white">{formatKondisiTeks('port', o.audit_terakhir.kondisi_port)}</b></div>
                         </div>
                         {o.audit_terakhir.foto_bukti && (
                           <div className="pt-1">

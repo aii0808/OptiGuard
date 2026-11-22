@@ -109,25 +109,47 @@ body {
   border: 2px solid #334155 !important;
 }
 
-/* Print Styles */
+/* Print Styles (Official 1-Page A4 Institutional Document Format) */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 1.5cm;
+    margin: 8mm 10mm 8mm 10mm;
   }
-  body {
+  html, body {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #020617 !important;
+    font-size: 10.5px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    height: auto !important;
+    overflow: visible !important;
   }
-  .no-print {
+  aside, header, .no-print {
     display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+  /* Remove browser auto-generated URL annotations from hyperlinks */
+  a[href]:after {
+    content: none !important;
+  }
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
   }
   .print-area {
     display: block !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

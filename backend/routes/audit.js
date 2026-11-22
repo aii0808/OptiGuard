@@ -106,7 +106,7 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
       .eq('id', tiket_id);
 
     // Kirim notifikasi Telegram bahwa seluruh pekerjaan tiket selesai
-    const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1005361280995';
+    const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1003810209824';
     const pesanSelesai = [
       '✅ <b>[OPTIGUARD] Tugas Tiket Patroli Selesai!</b>',
       '',

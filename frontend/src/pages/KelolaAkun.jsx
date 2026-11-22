@@ -310,6 +310,45 @@ export default function KelolaAkun() {
       {/* TAB 2: Pimpinan Manajemen Akun & Pendaftaran Akun Baru */}
       {activeTab === 'users' && user.role === 'pimpinan' && (
         <div className="space-y-6">
+          {/* Banner Kode Validasi Pendaftaran Instansi */}
+          <div className="rounded-3xl p-5 bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-900/50 shadow-lg flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#ED1C24]/10 border border-red-500/30 flex items-center justify-center text-[#ED1C24] shrink-0">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-rose-300">
+                    KODE VALIDASI REGISTRASI TEKNISI (INSTAN AKTIF)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Aktif
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Berikan kode ini kepada teknisi baru agar dapat mendaftar mandiri dan akun otomatis langsung aktif.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-950/80 px-4 py-2.5 rounded-2xl border border-red-500/40">
+              <span className="font-mono font-black text-sm text-white tracking-widest">
+                STO-OPTIGUARD
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText('STO-OPTIGUARD');
+                  showSnackbar('Kode STO-OPTIGUARD berhasil disalin ke clipboard!', 'success');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-[#ED1C24] hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer shadow-sm ml-1"
+                title="Salin Kode Validasi"
+              >
+                Salin Kode
+              </button>
+            </div>
+          </div>
+
           {/* Form Pendaftaran Akun Pengguna Baru Langsung */}
           <Tilt3DCard className="rounded-3xl glass-panel p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b pb-2.5 border-slate-200 dark:border-slate-800">

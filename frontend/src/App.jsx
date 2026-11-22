@@ -85,11 +85,7 @@ export default function App() {
       />
       <Route
         path="/approval"
-        element={
-          <ProtectedRoute allowedRoles={['pimpinan']}>
-            <ApprovalTeknisi />
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/profil" replace />}
       />
       <Route
         path="/profil"

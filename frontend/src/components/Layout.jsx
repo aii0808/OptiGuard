@@ -39,7 +39,6 @@ export default function Layout({ children }) {
   // Modern Logout Modal state
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const [pendingCount, setPendingCount] = useState(0);
   const [openPoolCount, setOpenPoolCount] = useState(0);
   const nav = useNavigate();
   const location = useLocation();
@@ -60,15 +59,11 @@ export default function Layout({ children }) {
     setMobileDrawerOpen(false);
   }, [location.pathname]);
 
-  // Periodic poll for badges and notifications
+  // Periodic poll for open pool badge and notifications
   useEffect(() => {
     let prevPool = 0;
     async function checkBadges() {
       try {
-        if (user?.role === 'pimpinan') {
-          const list = await api('/auth/pending-users');
-          setPendingCount(list?.length || 0);
-        }
         if (user?.role === 'teknisi') {
           const pool = await api('/tiket/open-pool');
           const count = pool?.length || 0;
@@ -97,12 +92,11 @@ export default function Layout({ children }) {
     nav('/login');
   }
 
-  // Navigation Links definition
+  // Navigation Links definition (Persetujuan teknisi dihapus karena teknisi langsung aktif via kode STO-OPTIGUARD)
   const pimpinanLinks = [
     { to: '/dashboard', label: 'Dashboard Lengkap', icon: LayoutGrid },
     { to: '/webgis', label: 'WebGIS Pemetaan ODP', icon: MapPin },
     { to: '/tiket', label: 'Manajemen Tiket Tugas', icon: ClipboardList },
-    { to: '/approval', label: 'Permohonan dari Teknisi', icon: CheckCircle2, badge: pendingCount },
     { to: '/laporan', label: 'Laporan Kerja Lapangan', icon: FileText },
     { to: '/profil', label: 'Kelola Akun & Pegawai', icon: Users },
   ];

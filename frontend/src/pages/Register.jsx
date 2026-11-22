@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Lock, Send, CheckCircle2, ArrowLeft, Sun, Moon, Palette } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, KeyRound, CheckCircle2, ArrowLeft, Sun, Moon, Palette, ShieldCheck } from 'lucide-react';
 import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import Logo from '../components/Logo.jsx';
@@ -24,7 +24,7 @@ export default function Register() {
     nama_lengkap: '',
     email: '',
     password: '',
-    telegram_chat_id: '',
+    kode_validasi: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,14 +41,21 @@ export default function Register() {
 
   async function handleRegister(e) {
     e.preventDefault();
+    if (!form.kode_validasi.trim()) {
+      showSnackbar('Kode validasi instansi wajib diisi (STO-OPTIGUARD)', 'warning');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api('/auth/register', {
         method: 'POST',
-        body: form,
+        body: {
+          ...form,
+          kode_validasi: form.kode_validasi.trim().toUpperCase(),
+        },
       });
-      showSnackbar('Pendaftaran berhasil dikirim!', 'success');
-      setSuccess(res.message);
+      showSnackbar(res.message || 'Pendaftaran berhasil dan akun telah aktif!', 'success');
+      setSuccess(res.message || 'Akun Anda berhasil divalidasi dan langsung aktif!');
     } catch (e2) {
       showSnackbar(e2.message, 'error');
     } finally {
@@ -114,7 +121,7 @@ export default function Register() {
               Registrasi Teknisi Patroli
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Pendaftaran akan diverifikasi oleh Pimpinan
+              Gunakan kode validasi resmi STO untuk aktivasi akun instan
             </p>
           </div>
 
@@ -124,7 +131,7 @@ export default function Register() {
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
-                Pendaftaran Berhasil Dikirim!
+                Pendaftaran Berhasil & Akun Aktif!
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {success}
@@ -134,7 +141,7 @@ export default function Register() {
                 className="w-full rounded-2xl py-2.5 text-xs font-bold text-white shadow-md transition cursor-pointer"
                 style={{ backgroundColor: '#ED1C24' }}
               >
-                Kembali ke Halaman Login
+                Masuk ke Halaman Login Sekarang
               </button>
             </div>
           ) : (
@@ -142,14 +149,14 @@ export default function Register() {
               {/* Nama Lengkap */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Nama Lengkap
+                  Nama Lengkap Pegawai
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
                     required
-                    placeholder="Nama Lengkap"
+                    placeholder="Contoh: Natasya / Ari"
                     value={form.nama_lengkap}
                     onChange={(e) => setForm({ ...form, nama_lengkap: e.target.value })}
                     className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#ED1C24]"
@@ -201,21 +208,28 @@ export default function Register() {
                 </div>
               </div>
 
-              {/* Telegram ID */}
+              {/* Kode Validasi Instansi */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Telegram Chat ID
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Kode Validasi Pendaftaran Instansi
+                  </label>
+                  <span className="text-[10px] text-red-500 font-semibold">*Wajib</span>
+                </div>
                 <div className="relative">
-                  <Send className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Opsional (untuk notifikasi bot)"
-                    value={form.telegram_chat_id}
-                    onChange={(e) => setForm({ ...form, telegram_chat_id: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#ED1C24]"
+                    required
+                    placeholder="Masukkan kode: STO-OPTIGUARD"
+                    value={form.kode_validasi}
+                    onChange={(e) => setForm({ ...form, kode_validasi: e.target.value.toUpperCase() })}
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#ED1C24]"
                   />
                 </div>
+                <p className="text-[10px] text-slate-400">
+                  Dapatkan kode validasi resmi dari Koordinator / Pimpinan STO Payakumbuh.
+                </p>
               </div>
 
               {/* Submit Button */}
@@ -225,7 +239,8 @@ export default function Register() {
                 className="w-full mt-3 py-2.5 px-4 rounded-2xl font-bold text-xs text-white shadow-lg transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
                 style={{ backgroundColor: '#ED1C24' }}
               >
-                <span>{loading ? 'Mengirim permohonan...' : 'Kirim Permohonan Registrasi'}</span>
+                <ShieldCheck className="w-4 h-4" />
+                <span>{loading ? 'Memvalidasi akun...' : 'Validasi & Aktifkan Akun'}</span>
               </button>
             </form>
           )}

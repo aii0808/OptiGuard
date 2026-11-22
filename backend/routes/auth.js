@@ -38,54 +38,55 @@ function savePendingList(list) {
   }
 }
 
-// 1. Registrasi Teknisi Baru (Status awal: PENDING butuh persetujuan pimpinan)
+// 1. Registrasi Teknisi Baru (Divalidasi langsung menggunakan Kode Instansi STO-OPTIGUARD)
 router.post('/register', async (req, res) => {
-  const { nama_lengkap, email, password, telegram_chat_id } = req.body || {};
+  const { nama_lengkap, email, password, kode_validasi } = req.body || {};
   if (!nama_lengkap || !email || !password) {
     return res.status(400).json({ error: 'Nama lengkap, email, dan password wajib diisi' });
   }
+
+  // Validasi Kode Rahasia Pendaftaran Instansi
+  const kodeBersih = (kode_validasi || '').trim().toUpperCase();
+  if (kodeBersih !== 'STO-OPTIGUARD') {
+    return res.status(400).json({
+      error: 'Kode validasi pendaftaran instansi salah! Masukkan kode resmi (STO-OPTIGUARD).'
+    });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
 
   // Cek apakah email sudah ada di tabel users Supabase
   const { data: existingUser } = await supabase
     .from('users')
     .select('id, email')
-    .eq('email', email.trim().toLowerCase())
+    .eq('email', cleanEmail)
     .maybeSingle();
 
   if (existingUser) {
     return res.status(409).json({ error: 'Email sudah terdaftar dalam sistem.' });
   }
 
-  // Cek apakah email sudah ada di antrean pending
-  const list = getPendingList();
-  const existingPending = list.find((p) => p.email.toLowerCase() === email.trim().toLowerCase());
-  if (existingPending) {
-    if (existingPending.status === 'PENDING') {
-      return res.status(409).json({ error: 'Pendaftaran email ini sedang menunggu persetujuan dari Pimpinan.' });
-    }
-    if (existingPending.status === 'REJECTED') {
-      return res.status(403).json({ error: 'Pendaftaran sebelumnya ditolak. Silakan hubungi Pimpinan Anda.' });
-    }
+  // Hash password dan daftarkan langsung akun aktif ke tabel users
+  const passwordHash = await bcrypt.hash(password.trim(), 10);
+  const { data: newUser, error: errInsert } = await supabase
+    .from('users')
+    .insert({
+      nama_lengkap: nama_lengkap.trim(),
+      email: cleanEmail,
+      password: passwordHash,
+      role: 'teknisi',
+    })
+    .select('id, nama_lengkap, email, role')
+    .single();
+
+  if (errInsert) {
+    return res.status(500).json({ error: 'Gagal membuat akun pengguna: ' + errInsert.message });
   }
-
-  const newPending = {
-    id: Date.now().toString(),
-    nama_lengkap: nama_lengkap.trim(),
-    email: email.trim().toLowerCase(),
-    password: password.trim(), // password teks atau hash
-    telegram_chat_id: telegram_chat_id ? String(telegram_chat_id).trim() : null,
-    role: 'teknisi',
-    status: 'PENDING',
-    created_at: new Date().toISOString(),
-  };
-
-  list.unshift(newPending);
-  savePendingList(list);
 
   res.status(201).json({
     ok: true,
-    message: 'Pendaftaran berhasil dikirim! Akun Anda wajib diverifikasi & disetujui Pimpinan sebelum dapat login.',
-    registration: { id: newPending.id, email: newPending.email, status: newPending.status },
+    message: 'Akun Teknisi Anda berhasil didaftarkan dan langsung aktif! Silakan masuk dengan email dan kata sandi Anda.',
+    user: newUser,
   });
 });
 

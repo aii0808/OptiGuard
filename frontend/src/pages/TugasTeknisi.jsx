@@ -28,9 +28,9 @@ const OPSI_KONDISI = [
     label: '1. Kondisi Fisik Boks ODP',
     subtitle: 'Periksa fisik boks, engsel, pintu, dan penguncian',
     opsi: [
-      [1, 'Aman / Layak'],
-      [2, 'Rusak Ringan'],
-      [3, 'Rusak Berat'],
+      [1, 'Aman / Terkunci Rapat'],
+      [2, 'Kunci Rusak / Pengait Lepas'],
+      [3, 'Pintu Terbuka / Boks Pecah'],
     ],
   },
   {
@@ -39,8 +39,8 @@ const OPSI_KONDISI = [
     subtitle: 'Periksa tiang penopang, kemiringan, dan korosi',
     opsi: [
       [1, 'Aman / Kokoh'],
-      [2, 'Rusak Ringan'],
-      [3, 'Rusak Berat'],
+      [2, 'Miring / Keropos Ringan'],
+      [3, 'Keropos Parah / Patah'],
     ],
   },
   {
@@ -48,9 +48,9 @@ const OPSI_KONDISI = [
     label: '3. Kondisi Kabel Udara / Dropcore',
     subtitle: 'Periksa bentangan kabel drop core dan kerapian jalur',
     opsi: [
-      [1, 'Rapi & Aman'],
-      [2, 'Kendur'],
-      [3, 'Putus / Rusak'],
+      [1, 'Rapi & Terpasang Aman'],
+      [2, 'Kendur / Menjuntai'],
+      [3, 'Terkelupas / Putus'],
     ],
   },
   {
@@ -58,9 +58,9 @@ const OPSI_KONDISI = [
     label: '4. Kondisi Port Konektor & Splitter',
     subtitle: 'Periksa kebersihan adapter dan redaman splitter',
     opsi: [
-      [1, 'Bersih & Baik'],
-      [2, 'Berdebu'],
-      [3, 'Kotor / Rusak'],
+      [1, 'Bersih & Normal'],
+      [2, 'Berdebu / Perlu Cleaning'],
+      [3, 'Kotor / Rusak / Loss Tinggi'],
     ],
   },
 ];
