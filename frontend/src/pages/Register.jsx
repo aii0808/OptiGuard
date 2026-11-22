@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Lock, KeyRound, CheckCircle2, ArrowLeft, Sun, Moon, Palette, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, KeyRound, CheckCircle2, ArrowLeft, Sun, Moon, Palette, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import Logo from '../components/Logo.jsx';
@@ -20,6 +20,7 @@ export default function Register() {
   const { darkMode, toggleDarkMode } = useTheme();
   const { showSnackbar } = useSnackbar();
   const nav = useNavigate();
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [form, setForm] = useState({
     nama_lengkap: '',
     email: '',
@@ -88,27 +89,55 @@ export default function Register() {
         </Link>
       </div>
 
-      {/* Top Right: Particle Color Picker */}
-      <div className="absolute top-5 right-5 z-20 flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 mr-1">
-          <Palette className="w-3.5 h-3.5" style={{ color: particleColor }} />
-          <span className="hidden sm:inline text-[11px]">Warna Partikel:</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {PARTICLE_COLORS.map((th) => (
-            <button
-              key={th.key}
-              type="button"
-              onClick={() => handleSelectParticleColor(th.color)}
-              className={`w-4 h-4 rounded-full transition-transform cursor-pointer ${
-                particleColor === th.color
-                  ? 'scale-125 ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-900'
-                  : 'hover:scale-110 opacity-70 hover:opacity-100'
-              }`}
-              style={{ backgroundColor: th.color }}
-              title={th.name}
+      {/* Top Right: Particle Color Picker (Collapsible) */}
+      <div className="absolute top-5 right-5 z-20">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setColorPickerOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-sm hover:scale-105 transition cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300"
+            title="Pilih Tema Warna Partikel"
+          >
+            <Palette className="w-3.5 h-3.5" style={{ color: particleColor }} />
+            <span
+              className="w-2.5 h-2.5 rounded-full ring-1 ring-white/50"
+              style={{ backgroundColor: particleColor }}
             />
-          ))}
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${colorPickerOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Collapsible Color Options Dropdown */}
+          {colorPickerOpen && (
+            <div className="absolute right-0 mt-2 p-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col gap-1 min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-0.5">
+                Tema Partikel
+              </span>
+              {PARTICLE_COLORS.map((th) => (
+                <button
+                  key={th.key}
+                  type="button"
+                  onClick={() => {
+                    handleSelectParticleColor(th.color);
+                    setColorPickerOpen(false);
+                  }}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    particleColor === th.color
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white font-bold'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10"
+                    style={{ backgroundColor: th.color }}
+                  />
+                  <span className="truncate text-[11px]">{th.name}</span>
+                  {particleColor === th.color && (
+                    <span className="ml-auto text-[10px] text-emerald-500 font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

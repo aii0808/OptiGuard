@@ -9,7 +9,6 @@ import WebGISPage from './pages/WebGISPage.jsx';
 import TugasPimpinan from './pages/TugasPimpinan.jsx';
 import TugasTeknisi from './pages/TugasTeknisi.jsx';
 import Laporan from './pages/Laporan.jsx';
-import ApprovalTeknisi from './pages/ApprovalTeknisi.jsx';
 import KelolaAkun from './pages/KelolaAkun.jsx';
 
 function ProtectedRoute({ children, allowedRoles }) {

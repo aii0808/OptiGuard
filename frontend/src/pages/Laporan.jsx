@@ -131,7 +131,13 @@ export default function Laporan() {
   }, [laporan, selectedTiketId, filterArea, cariOdp]);
 
   function triggerCetak() {
+    const judulAsli = document.title;
+    // Kosongkan judul dokumen sementara agar browser tidak mencetak judul di sudut kiri atas kertas
+    document.title = '';
     window.print();
+    setTimeout(() => {
+      document.title = judulAsli;
+    }, 1200);
   }
 
   // Indonesian formal date
@@ -189,7 +195,7 @@ export default function Laporan() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <button
               onClick={triggerCetak}
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white shadow-lg shadow-red-600/20 transition active:scale-95 cursor-pointer bg-[#ED1C24] hover:bg-red-700"
@@ -197,6 +203,9 @@ export default function Laporan() {
               <Printer className="w-4 h-4" />
               <span>Cetak PDF Berita Acara (1 Halaman A4)</span>
             </button>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 leading-tight">
+              💡 <b>Tips:</b> Hapus centang <i>"Header dan footer"</i> di dialog cetak browser agar URL & tanggal browser tidak tercetak di tepi kertas.
+            </span>
           </div>
         </div>
 
@@ -297,8 +306,8 @@ export default function Laporan() {
           </div>
         )}
 
-        {/* Tabel Rincian Hasil Audit Lapangan (Full Descriptive, No Numbers 1, 2, 3!) */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-4 print:border-slate-800 print:rounded-none print:shadow-none">
+        {/* Tabel Rincian Hasil Audit Lapangan (Full Descriptive, Pure White Print with Black Borders) */}
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-4 print:bg-white print:border-none print:rounded-none print:shadow-none print:mt-2">
           <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
             <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
               Rincian Kondisi Fisik Lapangan ({filtered.length} Titik ODP)
@@ -306,105 +315,105 @@ export default function Laporan() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-400">
+            <div className="py-12 text-center text-xs text-slate-400 print:text-black">
               {loading ? 'Memuat data laporan...' : 'Belum ada riwayat audit yang selesai pada tiket ini.'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse print:text-[9.5px]">
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full text-left text-xs border-collapse print:text-[9.5px] print:bg-white print:border print:border-black print:text-black">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px] tracking-wider print:bg-slate-200 print:text-slate-900">
-                    <th className="p-2.5 print:p-1.5 w-10">No</th>
-                    <th className="p-2.5 print:p-1.5">Kode ODP & Lokasi</th>
-                    <th className="p-2.5 print:p-1.5">Utilisasi Port</th>
-                    <th className="p-2.5 print:p-1.5">Kondisi Fisik Lapangan</th>
-                    <th className="p-2.5 print:p-1.5">Status Kelayakan</th>
-                    <th className="p-2.5 print:p-1.5 text-center">Foto Eviden</th>
+                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px] tracking-wider print:bg-slate-100 print:text-black print:border-b print:border-black">
+                    <th className="p-2.5 print:p-1.5 w-10 print:border print:border-black print:bg-slate-100 print:text-black">No</th>
+                    <th className="p-2.5 print:p-1.5 print:border print:border-black print:bg-slate-100 print:text-black">Kode ODP & Lokasi</th>
+                    <th className="p-2.5 print:p-1.5 print:border print:border-black print:bg-slate-100 print:text-black">Utilisasi Port</th>
+                    <th className="p-2.5 print:p-1.5 print:border print:border-black print:bg-slate-100 print:text-black">Kondisi Fisik Lapangan</th>
+                    <th className="p-2.5 print:p-1.5 print:border print:border-black print:bg-slate-100 print:text-black">Status Kelayakan</th>
+                    <th className="p-2.5 print:p-1.5 text-center print:border print:border-black print:bg-slate-100 print:text-black">Foto Eviden</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 print:divide-slate-300">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 print:divide-none">
                   {filtered.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition print:break-inside-avoid">
-                      <td className="p-2.5 print:p-1.5 font-bold text-slate-500 print:text-slate-800 align-top">
+                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition print:break-inside-avoid print:bg-white print:text-black">
+                      <td className="p-2.5 print:p-1.5 font-bold text-slate-500 print:text-black align-top print:border print:border-black print:bg-white">
                         {idx + 1}
                       </td>
 
-                      <td className="p-2.5 print:p-1.5 align-top">
-                        <div className="font-extrabold text-slate-900 dark:text-slate-100 print:text-slate-950">
+                      <td className="p-2.5 print:p-1.5 align-top print:border print:border-black print:bg-white">
+                        <div className="font-extrabold text-slate-900 dark:text-slate-100 print:text-black">
                           {item.odp.kode_odp}
                         </div>
-                        <div className="text-[11px] print:text-[9px] text-slate-600 dark:text-slate-400 print:text-slate-700 leading-tight">
+                        <div className="text-[11px] print:text-[9px] text-slate-600 dark:text-slate-400 print:text-black leading-tight">
                           {item.odp.alamat}
                         </div>
-                        <div className="text-[10px] print:text-[8.5px] text-slate-500 font-semibold mt-0.5">
+                        <div className="text-[10px] print:text-[8.5px] text-slate-500 print:text-black font-semibold mt-0.5">
                           Klaster: {item.area_klaster}
                         </div>
                       </td>
 
-                      <td className="p-2.5 print:p-1.5 align-top">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200 print:text-slate-900">
+                      <td className="p-2.5 print:p-1.5 align-top print:border print:border-black print:bg-white">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200 print:text-black">
                           {item.odp.port_terpakai ?? 0} / {item.odp.kapasitas_port || 8} Port
                         </div>
-                        <div className="text-[10px] print:text-[8.5px] text-slate-500">
+                        <div className="text-[10px] print:text-[8.5px] text-slate-500 print:text-black">
                           Sisa: {Math.max(0, (item.odp.kapasitas_port || 8) - (item.odp.port_terpakai ?? 0))} Kosong
                         </div>
                       </td>
 
                       {/* Deskripsi Fisik Jelas - Tidak Menggunakan Angka 1, 2, 3! */}
-                      <td className="p-2.5 print:p-1.5 align-top space-y-0.5 text-[11px] print:text-[9px]">
+                      <td className="p-2.5 print:p-1.5 align-top space-y-0.5 text-[11px] print:text-[9px] print:border print:border-black print:bg-white print:text-black">
                         <div>
-                          <span className="text-slate-500 font-semibold">Tiang:</span>{' '}
-                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                          <span className="text-slate-500 print:text-black font-semibold">Tiang:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-black">
                             {formatKondisiTeks('tiang', item.kondisi.tiang)}
                           </b>
                         </div>
                         <div>
-                          <span className="text-slate-500 font-semibold">Boks ODP:</span>{' '}
-                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                          <span className="text-slate-500 print:text-black font-semibold">Boks ODP:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-black">
                             {formatKondisiTeks('boks', item.kondisi.boks)}
                           </b>
                         </div>
                         <div>
-                          <span className="text-slate-500 font-semibold">Kabel:</span>{' '}
-                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                          <span className="text-slate-500 print:text-black font-semibold">Kabel:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-black">
                             {formatKondisiTeks('kabel', item.kondisi.kabel)}
                           </b>
                         </div>
                         <div>
-                          <span className="text-slate-500 font-semibold">Port Splitter:</span>{' '}
-                          <b className="text-slate-900 dark:text-slate-100 print:text-slate-950">
+                          <span className="text-slate-500 print:text-black font-semibold">Port Splitter:</span>{' '}
+                          <b className="text-slate-900 dark:text-slate-100 print:text-black">
                             {formatKondisiTeks('port', item.kondisi.port)}
                           </b>
                         </div>
                       </td>
 
-                      <td className="p-2.5 print:p-1.5 align-top">
+                      <td className="p-2.5 print:p-1.5 align-top print:border print:border-black print:bg-white">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-md text-[10px] print:text-[9px] font-black border uppercase tracking-wider ${
                             WARNA_STATUS[item.status_akhir] || 'text-slate-700 bg-slate-100 border-slate-300'
-                          }`}
+                          } print:bg-white print:text-black print:border-black`}
                         >
                           {item.status_akhir}
                         </span>
-                        <div className="text-[9px] text-slate-500 print:text-slate-600 mt-1">
+                        <div className="text-[9px] text-slate-500 print:text-black mt-1">
                           {new Date(item.waktu_audit).toLocaleDateString('id-ID')}
                         </div>
                       </td>
 
-                      <td className="p-2.5 print:p-1.5 align-top text-center">
+                      <td className="p-2.5 print:p-1.5 align-top text-center print:border print:border-black print:bg-white">
                         {item.foto_bukti ? (
                           <div className="inline-block">
                             <img
                               src={item.foto_bukti}
                               alt="Eviden Lapangan"
-                              className="w-14 h-14 print:w-12 print:h-12 rounded-lg object-cover border border-slate-300 print:border-slate-800 shadow-sm mx-auto"
+                              className="w-14 h-14 print:w-12 print:h-12 rounded-lg object-cover border border-slate-300 print:border-black shadow-sm mx-auto"
                             />
-                            <span className="block text-[8px] text-slate-500 print:text-slate-700 mt-0.5">
+                            <span className="block text-[8px] text-slate-500 print:text-black mt-0.5">
                               Eviden Fisik
                             </span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-[10px] italic">Tidak ada foto</span>
+                          <span className="text-slate-400 print:text-black text-[10px] italic">Tidak ada foto</span>
                         )}
                       </td>
                     </tr>

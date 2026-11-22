@@ -147,9 +147,35 @@ body {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
     box-shadow: none !important;
     border: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+  /* Enforce pure white background, black text, and crisp black borders on all table elements */
+  .print-area table {
+    width: 100% !important;
+    background: #ffffff !important;
+    border-collapse: collapse !important;
+    border: 1.5px solid #000000 !important;
+  }
+  .print-area thead th {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+    border: 1px solid #000000 !important;
+    padding: 6px 8px !important;
+  }
+  .print-area tbody td {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    padding: 6px 8px !important;
+  }
+  .print-area tr {
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }
