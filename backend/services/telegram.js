@@ -1,4 +1,4 @@
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export async function kirimTelegram(chatId, teks) {
   const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
@@ -22,16 +22,26 @@ export async function kirimTelegram(chatId, teks) {
   }
 }
 
-export function pesanTiketBaru({ tiket, teknisi, jumlahOdp, pimpinan }) {
-  return [
-    '🛠 <b>[PATROLI] Tugas Preventive Maintenance</b>',
+export function pesanTiketBaru({ tiket, teknisi, jumlahOdp, pimpinan, areaName, rute }) {
+  const namaArea = areaName || tiket.area_klaster;
+  const baris = [
+    '🛠 <b>[OPTIGUARD] Tugas Patroli & Validasi ODP</b>',
     '',
-    `Area: <b>${esc(tiket.area_klaster)}</b>`,
-    `Jumlah ODP: ${jumlahOdp}`,
-    `Tanggal: ${esc(tiket.tanggal_tugas)}`,
-    `Teknisi: ${esc(teknisi)}`,
-    `Dibuat oleh: ${esc(pimpinan)}`,
+    `📍 Wilayah Klaster: <b>${esc(namaArea)}</b>`,
+    `🎯 Jumlah Target ODP: <b>${jumlahOdp} Titik</b>`,
+  ];
+
+  if (Array.isArray(rute) && rute.length > 0) {
+    baris.push(`🗺️ <b>Rute Pengerjaan:</b>\n   ${esc(rute.join(' ➔ '))}`);
+  }
+
+  baris.push(
+    `📅 Jadwal: ${esc(tiket.tanggal_tugas || '-')}`,
+    `👷 Teknisi: ${esc(teknisi)}`,
+    `👤 Dibuat oleh: ${esc(pimpinan)}`,
     '',
-    'Buka aplikasi OptiGuard untuk mengisi checklist.',
-  ].join('\n');
+    'Buka aplikasi OptiGuard untuk petunjuk navigasi rute dan pengisian checklist audit.'
+  );
+
+  return baris.join('\n');
 }

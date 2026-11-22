@@ -5,7 +5,6 @@ import {
   X,
   LayoutGrid,
   MapPin,
-  Network,
   ClipboardList,
   CheckCircle2,
   FileText,
@@ -15,6 +14,7 @@ import {
   Moon,
   Volume2,
   VolumeX,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
@@ -34,6 +34,9 @@ export default function Layout({ children }) {
 
   // Mobile sidebar drawer state
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  // Modern Logout Modal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [pendingCount, setPendingCount] = useState(0);
   const [openPoolCount, setOpenPoolCount] = useState(0);
@@ -63,11 +66,11 @@ export default function Layout({ children }) {
       try {
         if (user?.role === 'pimpinan') {
           const list = await api('/auth/pending-users');
-          setPendingCount(list.length || 0);
+          setPendingCount(list?.length || 0);
         }
         if (user?.role === 'teknisi') {
           const pool = await api('/tiket/open-pool');
-          const count = pool.length || 0;
+          const count = pool?.length || 0;
           setOpenPoolCount(count);
           if (count > prevPool && prevPool !== 0) {
             triggerDingDong();
@@ -87,14 +90,13 @@ export default function Layout({ children }) {
     }
   }, [user, triggerDingDong, showSnackbar]);
 
-  function handleLogout() {
-    if (window.confirm('Apakah Anda yakin ingin keluar dari OptiGuard?')) {
-      logout();
-      nav('/login');
-    }
+  function confirmLogout() {
+    setShowLogoutModal(false);
+    logout();
+    nav('/login');
   }
 
-  // Navigation Links definition matching the user's reference mockup
+  // Navigation Links definition
   const pimpinanLinks = [
     { to: '/dashboard', label: 'Dashboard Lengkap', icon: LayoutGrid },
     { to: '/webgis', label: 'WebGIS Pemetaan ODP', icon: MapPin },
@@ -119,7 +121,7 @@ export default function Layout({ children }) {
       {/* Mobile Drawer Overlay */}
       {mobileDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setMobileDrawerOpen(false)}
         />
       )}
@@ -130,11 +132,19 @@ export default function Layout({ children }) {
           mobileDrawerOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full md:translate-x-0'
         } ${collapsed ? 'md:w-20' : 'md:w-72'}`}
       >
-        {/* Top Header of Sidebar (Matching Reference Image) */}
-        <div className="p-4 flex items-center justify-between border-b border-slate-800/60 shrink-0">
-          <div className="flex items-center gap-3 overflow-hidden">
-            {/* Telkom Akses Logo Badge */}
-            <Logo size="sm" showSubtitle={!collapsed} variant="telkom" />
+        {/* Top Header of Sidebar */}
+        <div
+          className={`border-b border-slate-800/60 shrink-0 flex items-center ${
+            collapsed ? 'p-3.5 justify-center' : 'p-4 justify-between'
+          }`}
+        >
+          <div className={`flex items-center overflow-hidden ${collapsed ? 'justify-center w-full' : 'gap-3'}`}>
+            {/* Unified OptiGuard Logo */}
+            <Logo
+              size="sm"
+              showSubtitle={!collapsed}
+              showText={!collapsed}
+            />
           </div>
 
           {/* Close button for mobile drawer */}
@@ -146,7 +156,7 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {/* User Profile Card (Matching Reference Image) */}
+        {/* User Profile Card */}
         {!collapsed && user && (
           <div className="p-4 mx-3 my-2 rounded-2xl bg-[#131A2D] border border-slate-800/60 flex items-center gap-3 shrink-0 shadow-sm">
             {/* Avatar with online dot */}
@@ -217,10 +227,10 @@ export default function Layout({ children }) {
           })}
         </div>
 
-        {/* Bottom Pinned Controls (Theme Toggle & Keluar Button - Matching Reference Screenshot) */}
+        {/* Bottom Pinned Controls (Theme Toggle & Modern Keluar Button) */}
         <div className="p-3 border-t border-slate-800/80 bg-[#0B0F19] shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            {/* Sun/Moon Theme Toggle Icon Button */}
+          <div className={`flex ${collapsed ? 'flex-col items-center gap-2.5' : 'items-center justify-between gap-2'}`}>
+            {/* Sun/Moon Theme Toggle */}
             <button
               type="button"
               onClick={toggleDarkMode}
@@ -231,11 +241,11 @@ export default function Layout({ children }) {
               {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
             </button>
 
-            {/* Logout Button (Dark Red Pill with Exit Icon as in reference screenshot) */}
+            {/* Logout Button */}
             <button
-              onClick={handleLogout}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs bg-[#240C14] hover:bg-[#34111D] border border-[#5E1424] text-rose-300 hover:text-rose-200 transition cursor-pointer shadow-sm ${
-                collapsed ? 'w-10 h-10 p-0' : 'flex-1'
+              onClick={() => setShowLogoutModal(true)}
+              className={`flex items-center justify-center gap-2 rounded-2xl font-bold text-xs bg-[#240C14] hover:bg-[#38121F] border border-[#5E1424] text-rose-300 hover:text-rose-100 transition cursor-pointer shadow-sm ${
+                collapsed ? 'w-10 h-10 p-0' : 'flex-1 py-2.5 px-4'
               }`}
               title="Keluar dari Sistem"
             >
@@ -268,7 +278,7 @@ export default function Layout({ children }) {
             </button>
 
             {/* OptiGuard Brand Badge */}
-            <Logo size="sm" showSubtitle={false} />
+            <Logo size="sm" showSubtitle={false} showText={true} />
           </div>
 
           {/* Right Action Icons in Header */}
@@ -313,6 +323,50 @@ export default function Layout({ children }) {
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
+
+      {/* Modern Logout Confirmation Modal (Dims Entire Application to Dark Gray Overlay) */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-[#0D1322] border border-slate-700/80 p-6 shadow-2xl space-y-5 text-center relative overflow-hidden">
+            {/* Glowing Accent Top Bar */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+
+            {/* Warning / Logout Icon */}
+            <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 text-[#ED1C24] flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
+              <LogOut className="w-8 h-8" />
+            </div>
+
+            {/* Modal Content */}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-extrabold text-white">
+                Konfirmasi Keluar Aplikasi
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Apakah Anda yakin ingin keluar dari <b className="text-white">OptiGuard</b>? Sesi kerja Anda akan diakhiri dan data Anda tersimpan aman.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="w-full py-2.5 rounded-2xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                className="w-full py-2.5 rounded-2xl font-bold text-xs bg-[#ED1C24] hover:bg-red-700 text-white shadow-lg shadow-red-600/30 transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Ya, Keluar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

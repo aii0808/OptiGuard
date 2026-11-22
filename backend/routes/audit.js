@@ -2,32 +2,33 @@ import { Router } from 'express';
 import multer from 'multer';
 import { supabase } from '../services/supabase.js';
 import { authRequired, roleOnly } from '../middleware/auth.js';
-import { kalkulasiGrading } from '../services/grading.js';
+import { hitungGrade } from '../services/grading.js';
+import { parseAreaKlaster } from './tiket.js';
 
-const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
 });
 
-// 1. Submit Audit Checklist & Eviden Foto
+const router = Router();
+
+// Kirim audit checklist (Teknisi)
 router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async (req, res) => {
   const b = req.body || {};
   const tiket_id = Number(b.tiket_id);
   const odp_id = Number(b.odp_id);
-  if (!Number.isInteger(tiket_id) || !Number.isInteger(odp_id))
-    return res.status(400).json({ error: 'tiket_id dan odp_id wajib angka' });
-  if (!req.file) return res.status(400).json({ error: 'Foto bukti wajib (format gambar, maks 5 MB)' });
 
-  let status;
-  try {
-    status = kalkulasiGrading({
-      tiang: Number(b.tiang), boks: Number(b.boks), kabel: Number(b.kabel), port: Number(b.port),
-    });
-  } catch (e) {
-    return res.status(400).json({ error: e.message });
-  }
+  if (!Number.isInteger(tiket_id) || !Number.isInteger(odp_id))
+    return res.status(400).json({ error: 'tiket_id dan odp_id wajib angka valid' });
+  if (!req.file)
+    return res.status(400).json({ error: 'Foto eviden wajib diunggah' });
+
+  // Validasi nilai kuesioner 1..3
+  const poin = [b.tiang, b.boks, b.kabel, b.port].map(Number);
+  if (poin.some((p) => !Number.isInteger(p) || p < 1 || p > 3))
+    return res.status(400).json({ error: 'Nilai kondisi fisik harus bernilai 1, 2, atau 3' });
+
+  const status = hitungGrade(b);
 
   const { data: tiket } = await supabase
     .from('tiket_patroli').select('*').eq('id', tiket_id).maybeSingle();
@@ -37,10 +38,18 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
     return res.status(409).json({ error: 'Tiket sudah selesai' });
   if (tiket.status_tiket === 'Pending')
     return res.status(409).json({ error: 'Mulai tiket dulu sebelum mengaudit' });
-  
+
+  const meta = parseAreaKlaster(tiket.area_klaster);
+  const baseArea = meta.area;
+  const targetOdpIds = meta.odp_ids;
+
   const { data: odp } = await supabase.from('odp').select('id, area').eq('id', odp_id).maybeSingle();
-  if (!odp || odp.area !== tiket.area_klaster)
-    return res.status(400).json({ error: 'ODP bukan bagian dari area tiket ini' });
+  if (!odp || (odp.area && odp.area !== baseArea))
+    return res.status(400).json({ error: 'ODP bukan bagian dari area klaster tiket ini' });
+
+  if (targetOdpIds && targetOdpIds.length > 0 && !targetOdpIds.includes(odp_id)) {
+    return res.status(400).json({ error: 'ODP ini tidak termasuk dalam daftar target rute tugas tiket ini' });
+  }
 
   // Upload foto ke Storage
   const ext = req.file.mimetype.split('/')[1] || 'jpg';
@@ -59,21 +68,19 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
   });
   if (error) {
     await supabase.storage.from('evidence').remove([path]);
-    if (error.code === '23505')
-      return res.status(409).json({ error: 'ODP ini sudah diaudit di tiket ini' });
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 
-  res.status(201).json({ status_akhir: status, foto_bukti: foto_url });
+  res.json({ ok: true, status_akhir: status, foto_url });
 });
 
-// 2. Laporan Hasil Pekerjaan (Selesai) untuk Pimpinan & Teknisi (Siap Cetak / Export)
+// Rekap seluruh laporan kerja lapangan (Pimpinan melihat semua, teknisi melihat tugasnya)
 router.get('/laporan', authRequired, async (req, res) => {
   try {
     const [auditRes, tiketRes, odpRes, usersRes] = await Promise.all([
       supabase.from('audit_valins').select('*').order('waktu_audit', { ascending: false }),
       supabase.from('tiket_patroli').select('*'),
-      supabase.from('odp').select('id, kode_odp, alamat, area, kapasitas_port, port_terpakai, status_fisik'),
+      supabase.from('odp').select('*'),
       supabase.from('users').select('id, nama_lengkap'),
     ]);
 
@@ -86,11 +93,13 @@ router.get('/laporan', authRequired, async (req, res) => {
     let reports = (auditRes.data || []).map((a) => {
       const tiket = tiketMap.get(a.tiket_id) || {};
       const odp = odpMap.get(a.odp_id) || {};
+      const meta = parseAreaKlaster(tiket.area_klaster);
       return {
         id: a.id,
         waktu_audit: a.waktu_audit,
         tiket_id: a.tiket_id,
-        area_klaster: tiket.area_klaster || odp.area || '-',
+        area_klaster: meta.area || odp.area || '-',
+        rute: meta.rute || null,
         tanggal_tugas: tiket.tanggal_tugas || null,
         status_tiket: tiket.status_tiket || 'Selesai',
         teknisi_id: tiket.teknisi_id,
@@ -116,7 +125,6 @@ router.get('/laporan', authRequired, async (req, res) => {
       };
     });
 
-    // Jika yang meminta teknisi, filter sesuai teknisinya (atau tampilkan semua jika pimpinan)
     if (req.user.role === 'teknisi') {
       reports = reports.filter((r) => r.teknisi_id === req.user.id);
     }

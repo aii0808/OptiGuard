@@ -1,13 +1,12 @@
 import { useTheme, DEFAULT_ACCENT } from '../theme.jsx';
 
 /**
- * OptiGuard & Telkom Akses Official Branding Logo
- * Can render:
- * - variant="full": Complete Telkom Akses + OptiGuard brand badge (matching the user's reference screenshot)
- * - variant="optiguard": High-tech OptiGuard Shield & Optical Distribution Port symbol
- * - variant="telkom": Telkom Akses STO Payakumbuh badge
+ * OptiGuard Official Branding Logo
+ * - Central shield with fiber optic distribution ports
+ * - Unified branding: OptiGuard with "STO Telkom Akses Payakumbuh" subtitle
+ * - Cleanly hides text when showText={false} (for collapsed sidebar)
  */
-export default function Logo({ size = 'md', showSubtitle = true, color, variant = 'optiguard' }) {
+export default function Logo({ size = 'md', showSubtitle = true, showText = true, color, variant = 'optiguard' }) {
   const theme = useTheme();
   const primaryColor = color || theme?.accent?.primary || theme?.primaryColor || DEFAULT_ACCENT.primary;
 
@@ -17,47 +16,6 @@ export default function Logo({ size = 'md', showSubtitle = true, color, variant 
     lg: { box: 'w-14 h-14', icon: 'w-9 h-9', title: 'text-xl', sub: 'text-xs' },
   }[size] || { box: 'w-10 h-10', icon: 'w-6 h-6', title: 'text-base', sub: 'text-[10px]' };
 
-  if (variant === 'telkom') {
-    return (
-      <div className="flex items-center gap-3 select-none">
-        {/* Rounded White Badge as shown in reference image */}
-        <div className={`${dims.box} rounded-2xl bg-white flex items-center justify-center p-1.5 shadow-md shrink-0 border border-slate-200/60`}>
-          {/* Telkom Akses Stylized Spark SVG */}
-          <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
-            {/* Spark Rays */}
-            <circle cx="50" cy="50" r="14" fill="#ED1C24" />
-            <line x1="50" y1="12" x2="50" y2="30" stroke="#ED1C24" strokeWidth="6" strokeLinecap="round" />
-            <line x1="50" y1="70" x2="50" y2="88" stroke="#ED1C24" strokeWidth="6" strokeLinecap="round" />
-            <line x1="12" y1="50" x2="30" y2="50" stroke="#ED1C24" strokeWidth="6" strokeLinecap="round" />
-            <line x1="70" y1="50" x2="88" y2="50" stroke="#ED1C24" strokeWidth="6" strokeLinecap="round" />
-            <line x1="23" y1="23" x2="36" y2="36" stroke="#ED1C24" strokeWidth="5" strokeLinecap="round" />
-            <line x1="64" y1="64" x2="77" y2="77" stroke="#ED1C24" strokeWidth="5" strokeLinecap="round" />
-            <line x1="23" y1="77" x2="36" y2="64" stroke="#ED1C24" strokeWidth="5" strokeLinecap="round" />
-            <line x1="64" y1="36" x2="77" y2="23" stroke="#ED1C24" strokeWidth="5" strokeLinecap="round" />
-            {/* Central Fiber Core Light */}
-            <circle cx="50" cy="50" r="6" fill="#FFFFFF" />
-          </svg>
-        </div>
-
-        <div className="flex flex-col text-left">
-          <div className={`font-black tracking-tight ${dims.title} leading-tight`}>
-            <span className="text-white dark:text-white">TELKOM </span>
-            <span className="text-[#ED1C24]">AKSES</span>
-          </div>
-          {showSubtitle && (
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-              <span className={`${dims.sub} font-bold tracking-wider uppercase text-slate-400`}>
-                STO PAYAKUMBUH
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // High-Tech OptiGuard ODP Shield Logo
   return (
     <div className="flex items-center gap-3 select-none">
       <div className={`relative ${dims.box} flex items-center justify-center shrink-0`}>
@@ -100,7 +58,7 @@ export default function Logo({ size = 'md', showSubtitle = true, color, variant 
           <polygon
             points="50,18 78,32 78,60 50,74 22,60 22,32"
             fill="#090E17"
-            stroke="url(#fiberPulse-${size})"
+            stroke={`url(#fiberPulse-${size})`}
             strokeWidth="2"
             opacity="0.9"
           />
@@ -127,17 +85,22 @@ export default function Logo({ size = 'md', showSubtitle = true, color, variant 
         </svg>
       </div>
 
-      <div className="flex flex-col text-left">
-        <div className={`font-black tracking-tight ${dims.title} leading-none flex items-center`}>
-          <span className="text-slate-900 dark:text-white">OPTI</span>
-          <span style={{ color: primaryColor }} className="transition-colors duration-300">GUARD</span>
+      {showText && (
+        <div className="flex flex-col text-left overflow-hidden min-w-0">
+          <div className={`font-black tracking-tight ${dims.title} leading-none flex items-center`}>
+            <span className="text-white">OPTI</span>
+            <span style={{ color: primaryColor }} className="transition-colors duration-300">GUARD</span>
+          </div>
+          {showSubtitle && (
+            <div className="flex items-center gap-1.5 mt-1 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+              <span className={`${dims.sub} font-bold tracking-wider uppercase text-slate-400 truncate`}>
+                STO Telkom Akses Payakumbuh
+              </span>
+            </div>
+          )}
         </div>
-        {showSubtitle && (
-          <span className={`${dims.sub} font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-400 mt-1`}>
-            STO Telkom Akses Payakumbuh
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }

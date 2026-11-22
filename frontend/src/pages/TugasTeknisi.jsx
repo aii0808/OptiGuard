@@ -319,8 +319,14 @@ export default function TugasTeknisi() {
                 >
                   <div>
                     <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100">
-                      Tiket #{t.id} · Klaster Area: {t.area_klaster}
+                      Tiket #{t.id} · Klaster: {t.area_name || t.area_klaster}
                     </div>
+                    {Array.isArray(t.rute) && t.rute.length > 0 && (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono mt-0.5">
+                        <Navigation className="w-3 h-3 text-[#ED1C24]" />
+                        <span className="text-slate-300">{t.rute.join(' ➔ ')}</span>
+                      </div>
+                    )}
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                       Jadwal Tanggal: {t.tanggal_tugas || '-'}
                     </div>
@@ -369,8 +375,14 @@ export default function TugasTeknisi() {
                 >
                   <div>
                     <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100">
-                      Tiket #{t.id} · Klaster Area: {t.area_klaster}
+                      Tiket #{t.id} · Klaster: {t.area_name || t.area_klaster}
                     </div>
+                    {Array.isArray(t.rute) && t.rute.length > 0 && (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono mt-0.5">
+                        <Navigation className="w-3 h-3 text-[#ED1C24]" />
+                        <span className="text-slate-300">{t.rute.join(' ➔ ')}</span>
+                      </div>
+                    )}
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                       Jadwal: {t.tanggal_tugas || '-'} · Siaga Terbuka
                     </div>
@@ -413,12 +425,38 @@ export default function TugasTeknisi() {
 
           <div>
             <h2 className="text-base font-black text-slate-800 dark:text-slate-100">
-              Tiket #{aktifTiket.tiket.id} · Klaster {aktifTiket.tiket.area_klaster}
+              Tiket #{aktifTiket.tiket.id} · Klaster {aktifTiket.area_name || aktifTiket.tiket.area_name || aktifTiket.tiket.area_klaster}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Silakan periksa kondisi tiang, boks, kabel, dan port pada setiap titik ODP di bawah.
+              Silakan periksa kondisi tiang, boks, kabel, dan port pada setiap titik ODP di bawah sesuai rute tugas.
             </p>
           </div>
+
+          {/* Rute Inspection Banner */}
+          {Array.isArray(aktifTiket.rute) && aktifTiket.rute.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                <div className="flex items-center gap-1.5">
+                  <Navigation className="w-3.5 h-3.5 text-[#ED1C24]" />
+                  <span>Rute Pengerjaan Sesuai Penugasan:</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-semibold">Ikuti sesuai urutan langkah</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                {aktifTiket.rute.map((kode, idx) => (
+                  <div key={kode} className="flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-white border border-slate-700 flex items-center gap-1.5 shadow-sm">
+                      <span className="w-4 h-4 rounded-full bg-[#ED1C24] text-white text-[9px] font-black flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <b className="text-white text-[11px]">{kode}</b>
+                    </span>
+                    {idx < aktifTiket.rute.length - 1 && <span className="text-red-500 font-bold">➔</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Pending Action: Mulai Tugas */}
           {aktifTiket.tiket.status_tiket === 'Pending' && (
@@ -452,7 +490,12 @@ export default function TugasTeknisi() {
                   className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{o.kode_odp}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-[#ED1C24] text-white text-[10px] font-black flex items-center justify-center">
+                        {o.urutan_rute || '•'}
+                      </span>
+                      <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{o.kode_odp}</span>
+                    </div>
                     <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${WARNA_STATUS[o.audit?.status_akhir || o.status_fisik] || 'text-slate-400'}`}>
                       {o.audit?.status_akhir || o.status_fisik}
                     </span>

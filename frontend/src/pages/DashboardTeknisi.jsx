@@ -175,8 +175,13 @@ export default function DashboardTeknisi() {
               >
                 <div>
                   <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100">
-                    Tiket #{t.id} · Klaster Area: {t.area_klaster}
+                    Tiket #{t.id} · Klaster: {t.area_name || t.area_klaster}
                   </div>
+                  {Array.isArray(t.rute) && t.rute.length > 0 && (
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      {t.rute.join(' ➔ ')}
+                    </div>
+                  )}
                   <div className="text-[11px] text-slate-400 mt-0.5">
                     Tanggal Tugas: {t.tanggal_tugas || '-'}
                   </div>
