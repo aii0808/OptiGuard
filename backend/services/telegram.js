@@ -2,6 +2,7 @@ const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 
 // Supergroup resmi STO OptiGuard (hasil migrasi otomatis dari grup baru -5361280995)
 const DEFAULT_GROUP_ID = '-1003810209824';
+const APP_URL = 'https://optiguard-ten.vercel.app/login';
 
 export async function kirimTelegram(chatId, teks) {
   const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
@@ -25,21 +26,39 @@ export async function kirimTelegram(chatId, teks) {
     targetId = DEFAULT_GROUP_ID;
   }
 
+  const payload = {
+    chat_id: targetId,
+    text: teks,
+    parse_mode: 'HTML',
+    link_preview_options: { is_disabled: false },
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: '🚀 Buka Web / PWA OptiGuard',
+            url: APP_URL,
+          },
+        ],
+      ],
+    },
+  };
+
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: targetId, text: teks, parse_mode: 'HTML' }),
+      body: JSON.stringify(payload),
     });
     const j = await r.json();
     if (!j.ok) {
       console.error(`Telegram gagal kirim ke ${targetId}:`, j.description);
       // Jika masih gagal (misal jika kirim direct ke user gagal), fallback ke grup sto-optiguard
       if (targetId !== DEFAULT_GROUP_ID) {
+        payload.chat_id = DEFAULT_GROUP_ID;
         const fbRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: DEFAULT_GROUP_ID, text: teks, parse_mode: 'HTML' }),
+          body: JSON.stringify(payload),
         });
         const fbJson = await fbRes.json();
         return !!fbJson.ok;
@@ -71,7 +90,8 @@ export function pesanTiketBaru({ tiket, teknisi, jumlahOdp, pimpinan, areaName, 
     `👷 Teknisi: ${esc(teknisi)}`,
     `👤 Dibuat oleh: ${esc(pimpinan)}`,
     '',
-    'Buka aplikasi OptiGuard untuk petunjuk navigasi rute dan pengisian checklist audit.'
+    '🔗 <b>Akses Aplikasi (Web/PWA):</b>',
+    'https://optiguard-ten.vercel.app/login'
   );
 
   return baris.join('\n');

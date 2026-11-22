@@ -183,7 +183,10 @@ router.post('/:id/klaim', authRequired, roleOnly('teknisi'), async (req, res) =>
   const meta = parseAreaKlaster(tiket.area_klaster);
   const targetGroup = (process.env.TELEGRAM_OPTIGUARD_GROUP_ID || '').trim() || process.env.TELEGRAM_GROUP_ID || '-1003810209824';
   if (targetGroup) {
-    kirimTelegram(targetGroup, `👷 <b>Tiket #${id} (${meta.area || 'Patroli'})</b> telah diambil/diklaim oleh teknisi: <b>${req.user.nama}</b>.`);
+    kirimTelegram(
+      targetGroup,
+      `👷 <b>Tiket #${id} (${meta.area || 'Patroli'})</b> telah diambil/diklaim oleh teknisi: <b>${req.user.nama}</b>.\n\n🔗 <b>Akses Aplikasi (Web/PWA):</b>\nhttps://optiguard-ten.vercel.app/login`
+    );
   }
 
   res.json({

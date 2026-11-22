@@ -116,6 +116,9 @@ router.post('/', authRequired, roleOnly('teknisi'), upload.single('foto'), async
       `🎯 Total ODP Selesai Divalidasi: <b>${doneCount} dari ${totalTarget} Titik ODP</b>`,
       '',
       'Seluruh titik ODP telah diaudit fisik dan foto eviden tersimpan aman di sistem OptiGuard.',
+      '',
+      '🔗 <b>Buka Laporan & Berita Acara:</b>',
+      'https://optiguard-ten.vercel.app/login',
     ].join('\n');
     kirimTelegram(targetGroup, pesanSelesai);
   }

@@ -26,36 +26,20 @@ const WARNA_STATUS = {
 };
 
 /**
- * Format physical inspection components to natural descriptive technical Indonesian
- * (Never display raw numbers 1, 2, 3!)
+ * Format physical inspection components: direct, clear, textless (Tidak Rusak, Rusak Ringan, Rusak Berat)
  */
 export function formatKondisiTeks(komponen, nilai) {
   const n = Number(nilai);
-  if (komponen === 'tiang') {
-    if (n === 1) return 'Aman / Kokoh';
-    if (n === 2) return 'Miring / Keropos Ringan';
-    if (n === 3) return 'Keropos Parah / Patah';
-    return typeof nilai === 'string' && nilai ? nilai : 'Aman / Kokoh';
+  if (n === 1) return 'Tidak Rusak';
+  if (n === 2) return 'Rusak Ringan';
+  if (n === 3) return 'Rusak Berat';
+  if (typeof nilai === 'string' && nilai) {
+    const s = nilai.toLowerCase();
+    if (s.includes('berat') || s.includes('parah') || s.includes('putus') || s.includes('pecah')) return 'Rusak Berat';
+    if (s.includes('ringan') || s.includes('kendur') || s.includes('debu') || s.includes('miring') || s.includes('lepas')) return 'Rusak Ringan';
+    return 'Tidak Rusak';
   }
-  if (komponen === 'boks') {
-    if (n === 1) return 'Aman / Terkunci Rapat';
-    if (n === 2) return 'Kunci Rusak / Pengait Lepas';
-    if (n === 3) return 'Pintu Terbuka / Boks Pecah';
-    return typeof nilai === 'string' && nilai ? nilai : 'Aman / Terkunci Rapat';
-  }
-  if (komponen === 'kabel') {
-    if (n === 1) return 'Rapi & Terpasang Aman';
-    if (n === 2) return 'Kendur / Menjuntai';
-    if (n === 3) return 'Terkelupas / Putus';
-    return typeof nilai === 'string' && nilai ? nilai : 'Rapi & Aman';
-  }
-  if (komponen === 'port') {
-    if (n === 1) return 'Bersih & Normal';
-    if (n === 2) return 'Berdebu / Perlu Cleaning';
-    if (n === 3) return 'Kotor / Rusak / Loss Tinggi';
-    return typeof nilai === 'string' && nilai ? nilai : 'Bersih & Normal';
-  }
-  return String(nilai || '-');
+  return 'Tidak Rusak';
 }
 
 export default function Laporan() {
