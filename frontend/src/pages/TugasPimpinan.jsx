@@ -25,6 +25,7 @@ import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import { Tilt3DCard } from '../components/MouseEffect.jsx';
 import { parseFotoBukti } from '../utils/foto.js';
+import RincianAuditSelesai from '../components/RincianAuditSelesai.jsx';
 
 const WARNA_STATUS = {
   Aman: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
@@ -599,29 +600,13 @@ export default function TugasPimpinan() {
 
                 {/* Audit Terakhir */}
                 {o.audit_terakhir ? (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
-                    <div className="text-[11px] space-y-0.5">
-                      <div>Audit: <b>{new Date(o.audit_terakhir.waktu_audit).toLocaleDateString('id-ID')}</b></div>
-                      <div className="text-slate-400">
-                        Tiang {o.audit_terakhir.kondisi_tiang} · Boks {o.audit_terakhir.kondisi_boks} · Kabel {o.audit_terakhir.kondisi_kabel} · Port {o.audit_terakhir.kondisi_port}
-                      </div>
-                    </div>
-                    {(() => {
-                      const fotoList = parseFotoBukti(o.audit_terakhir.foto_bukti);
-                      if (fotoList.length === 0) return null;
-                      return (
-                        <div className="flex items-center gap-1 shrink-0">
-                          {fotoList.map((url, fIdx) => (
-                            <a key={fIdx} href={url} target="_blank" rel="noreferrer" title={`Eviden ${fIdx + 1}`}>
-                              <img src={url} alt={`Eviden ${fIdx + 1}`} className="w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-sm hover:scale-105 transition" />
-                            </a>
-                          ))}
-                        </div>
-                      );
-                    })()}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <RincianAuditSelesai audit={o.audit_terakhir} kodeOdp={o.kode_odp} />
                   </div>
                 ) : (
-                  <div className="text-[11px] text-slate-400 italic">Belum ada riwayat audit fisik.</div>
+                  <div className="text-[11px] text-slate-400 italic pt-2 border-t border-slate-200 dark:border-slate-700">
+                    Belum ada riwayat audit fisik.
+                  </div>
                 )}
 
                 {/* Blokir Action */}
@@ -764,31 +749,11 @@ export default function TugasPimpinan() {
                   <div className="text-slate-500 dark:text-slate-400 pl-7">{o.alamat}</div>
 
                   {o.audit ? (
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between pl-7">
-                      <div>
-                        <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          Sudah Diaudit (Hasil: {o.audit.status_akhir})
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          Tiang {o.audit.kondisi_tiang} · Boks {o.audit.kondisi_boks} · Kabel {o.audit.kondisi_kabel} · Port {o.audit.kondisi_port}
-                        </div>
-                      </div>
-                      {(() => {
-                        const fotoList = parseFotoBukti(o.audit.foto_bukti);
-                        if (fotoList.length === 0) return null;
-                        return (
-                          <div className="flex items-center gap-1 shrink-0">
-                            {fotoList.map((url, fIdx) => (
-                              <a key={fIdx} href={url} target="_blank" rel="noreferrer" title={`Eviden ${fIdx + 1}`}>
-                                <img src={url} alt={`Eviden ${fIdx + 1}`} className="w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-sm hover:scale-105 transition" />
-                              </a>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 pl-7">
+                      <RincianAuditSelesai audit={o.audit} kodeOdp={o.kode_odp} />
                     </div>
                   ) : (
-                    <div className="text-slate-400 italic pl-7">Menunggu audit di lapangan oleh teknisi.</div>
+                    <div className="text-slate-400 italic pl-7 text-[11px]">Menunggu audit di lapangan oleh teknisi.</div>
                   )}
                 </div>
               ))}

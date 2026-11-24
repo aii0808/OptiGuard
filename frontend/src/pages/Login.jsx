@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, Sparkles, Palette, Sun, Moon, Loader2, ChevronDown } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { useTheme } from '../theme.jsx';
@@ -18,7 +18,8 @@ const PARTICLE_COLORS = [
 ];
 
 export default function Login() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
+  if (user) return <Navigate to="/dashboard" replace />;
   const { darkMode, toggleDarkMode } = useTheme();
   const { showSnackbar } = useSnackbar();
   const nav = useNavigate();

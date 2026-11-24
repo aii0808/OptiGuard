@@ -17,6 +17,7 @@ import { useTheme } from '../theme.jsx';
 import { useSnackbar } from '../components/Snackbar.jsx';
 import { Tilt3DCard } from '../components/MouseEffect.jsx';
 import { parseFotoBukti } from '../utils/foto.js';
+import RincianAuditSelesai from '../components/RincianAuditSelesai.jsx';
 
 const WARNA_STATUS = {
   Aman: 'text-[#10B981] bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400',
@@ -756,6 +757,11 @@ export default function TugasTeknisi() {
 
                     <p className="text-slate-600 dark:text-slate-300 font-medium">{o.alamat}</p>
 
+                    {/* Jika Sudah Diaudit: Tampilkan Rincian Detail Kerja Terstruktur */}
+                    {sudahAudit && (
+                      <RincianAuditSelesai audit={o.audit} kodeOdp={o.kode_odp} className="mt-2" />
+                    )}
+
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                       <a
                         href={`https://www.google.com/maps?q=${o.latitude},${o.longitude}`}
@@ -768,32 +774,10 @@ export default function TugasTeknisi() {
                       </a>
 
                       {sudahAudit ? (
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const fotoList = parseFotoBukti(o.audit?.foto_bukti);
-                            if (fotoList.length === 0) return null;
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                {fotoList.map((url, fIdx) => (
-                                  <a
-                                    key={fIdx}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-[11px] font-bold text-blue-500 hover:underline"
-                                    title={`Buka Eviden ${fIdx + 1}`}
-                                  >
-                                    {fotoList.length > 1 ? `Foto ${fIdx + 1}` : 'Lihat Eviden'}
-                                  </a>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                          <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 text-xs font-bold border border-emerald-300 dark:border-emerald-800">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Sudah Diaudit</span>
-                          </span>
-                        </div>
+                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3.5 py-2 text-xs font-bold border border-emerald-300 dark:border-emerald-800 shadow-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <span>Pekerjaan Telah Selesai & Tervalidasi</span>
+                        </span>
                       ) : (
                         bisaAudit && (
                           <button

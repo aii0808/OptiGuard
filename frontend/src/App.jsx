@@ -12,7 +12,14 @@ import Laporan from './pages/Laporan.jsx';
 import KelolaAkun from './pages/KelolaAkun.jsx';
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user } = useAuth();
+  const { user, checkingAuth } = useAuth();
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        <div className="w-8 h-8 border-3 border-[#ED1C24] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
@@ -27,6 +34,17 @@ function RoleDashboard() {
 }
 
 function RootRedirect() {
+  const { user, checkingAuth } = useAuth();
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        <div className="w-8 h-8 border-3 border-[#ED1C24] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  // Pengguna baru atau belum login wajib diarahkan ke halaman login
+  if (!user) return <Navigate to="/login" replace />;
+
   const lastPath = localStorage.getItem('og_current_path');
   const target = lastPath && lastPath !== '/' && lastPath !== '/login' && lastPath !== '/register'
     ? lastPath
