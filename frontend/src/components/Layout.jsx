@@ -112,7 +112,8 @@ export default function Layout({ children }) {
   const links = user?.role === 'pimpinan' ? pimpinanLinks : teknisiLinks;
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#0A0E17] text-slate-100">
+    // UBAH: h-screen jadi h-dvh supaya tinggi ikut layar HP yang kelihatan (bukan 100vh)
+    <div className="h-dvh w-screen overflow-hidden flex bg-[#0A0E17] text-slate-100">
       {/* Mobile Drawer Overlay */}
       {mobileDrawerOpen && (
         <div
@@ -121,16 +122,16 @@ export default function Layout({ children }) {
         />
       )}
 
-      {/* Modern Sidebar (1 Screen Height, fits in viewport, logout visible at bottom) */}
+      {/* Sidebar. UBAH: h-screen jadi h-dvh (dua kali di className bawah), tombol Keluar jadi tidak ketutup toolbar HP */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 h-screen max-h-screen bg-[#0D1322] border-r border-slate-800/80 flex flex-col justify-between transition-all duration-300 ease-in-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 h-dvh max-h-dvh bg-[#0D1322] border-r border-slate-800/80 flex flex-col justify-between transition-all duration-300 ease-in-out md:static md:translate-x-0 ${
           mobileDrawerOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full md:translate-x-0'
         } ${collapsed ? 'md:w-20' : 'md:w-72'}`}
       >
         {/* Top Header of Sidebar */}
         <div
           className={`border-b border-slate-800/60 shrink-0 flex items-center ${
-            collapsed ? 'p-3.5 justify-center' : 'p-4 justify-between'
+            collapsed ? 'p-3 justify-center' : 'px-4 py-3 justify-between'
           }`}
         >
           <div className={`flex items-center overflow-hidden ${collapsed ? 'justify-center w-full' : 'gap-3'}`}>
@@ -152,11 +153,12 @@ export default function Layout({ children }) {
         </div>
 
         {/* User Profile Card */}
+        {/* UBAH: kartu profil jadi strip datar (tanpa box, tanpa margin) seperti di aplikasi STO */}
         {!collapsed && user && (
-          <div className="p-4 mx-3 my-2 rounded-2xl bg-[#131A2D] border border-slate-800/60 flex items-center gap-3 shrink-0 shadow-sm">
+          <div className="px-4 py-3 border-b border-slate-800/60 flex items-center gap-3 shrink-0">
             {/* Avatar with online dot */}
             <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full bg-[#ED1C24] flex items-center justify-center font-black text-base text-white shadow-md">
+              <div className="w-9 h-9 rounded-xl bg-[#ED1C24] flex items-center justify-center font-black text-sm text-white shadow-md">
                 {user.nama ? user.nama.charAt(0).toUpperCase() : 'U'}
               </div>
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#131A2D]" />
@@ -176,7 +178,7 @@ export default function Layout({ children }) {
         )}
 
         {/* Navigation Items List */}
-        <div className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {!collapsed && (
             <div className="text-[11px] uppercase font-bold tracking-wider text-slate-400 px-3 pt-2 pb-1">
               MENU NAVIGASI
@@ -191,8 +193,8 @@ export default function Layout({ children }) {
                 to={item.to}
                 className={({ isActive }) =>
                   `group relative flex items-center ${
-                    collapsed ? 'justify-center px-2 py-3' : 'justify-between px-4 py-3'
-                  } rounded-2xl text-xs font-semibold transition-all duration-200 ${
+                    collapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2.5'
+                  } rounded-xl text-xs font-semibold transition-all duration-200 ${
                     isActive
                       ? 'bg-[#ED1C24] text-white shadow-lg shadow-red-600/30 font-bold'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -223,13 +225,15 @@ export default function Layout({ children }) {
         </div>
 
         {/* Bottom Pinned Controls (Theme Toggle & Modern Keluar Button) */}
-        <div className="p-3 border-t border-slate-800/80 bg-[#0B0F19] shrink-0">
+        {/* UBAH: tambah pb-[...] supaya tombol Keluar naik di atas bar navigasi HP */}
+        <div className="px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-slate-800/80 bg-[#0B0F19] shrink-0">
           <div className={`flex ${collapsed ? 'flex-col items-center gap-2.5' : 'items-center justify-between gap-2'}`}>
+            {/* UBAH: tombol Keluar tidak lagi memanjang (flex-1), jadi kecil di kanan seperti di aplikasi STO */}
             {/* Sun/Moon Theme Toggle */}
             <button
               type="button"
               onClick={toggleDarkMode}
-              className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#131A2D] hover:bg-[#1A233D] border border-slate-700/60 text-amber-400 transition cursor-pointer shrink-0 shadow-sm"
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#131A2D] hover:bg-[#1A233D] border border-slate-700/60 text-amber-400 transition cursor-pointer shrink-0 shadow-sm"
               title={darkMode ? 'Mode Gelap Aktif (Klik untuk Mode Terang)' : 'Mode Terang Aktif (Klik untuk Mode Gelap)'}
               aria-label="Toggle Theme"
             >
@@ -239,8 +243,8 @@ export default function Layout({ children }) {
             {/* Logout Button */}
             <button
               onClick={() => setShowLogoutModal(true)}
-              className={`flex items-center justify-center gap-2 rounded-2xl font-bold text-xs bg-[#240C14] hover:bg-[#38121F] border border-[#5E1424] text-rose-300 hover:text-rose-100 transition cursor-pointer shadow-sm ${
-                collapsed ? 'w-10 h-10 p-0' : 'flex-1 py-2.5 px-4'
+              className={`flex items-center justify-center gap-2 rounded-xl font-bold text-xs bg-[#240C14] hover:bg-[#38121F] border border-[#5E1424] text-rose-300 hover:text-rose-100 transition cursor-pointer shadow-sm ${
+                collapsed ? 'w-9 h-9 p-0' : 'py-2 px-5'
               }`}
               title="Keluar dari Sistem"
             >
@@ -252,7 +256,8 @@ export default function Layout({ children }) {
       </aside>
 
       {/* Main App Content Viewport */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      {/* UBAH: h-screen jadi h-dvh */}
+      <div className="flex-1 flex flex-col h-dvh overflow-hidden">
         {/* Top Header Navbar */}
         <header className="h-16 px-4 md:px-6 bg-[#0D1322]/90 backdrop-blur-xl border-b border-slate-800 flex items-center justify-between shrink-0 z-30">
           <div className="flex items-center gap-3">
@@ -315,10 +320,10 @@ export default function Layout({ children }) {
 
       {/* Modern Logout Confirmation Modal (Dims Entire Application to Dark Gray Overlay) */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-9999 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-[#0D1322] border border-slate-700/80 p-6 shadow-2xl space-y-5 text-center relative overflow-hidden">
             {/* Glowing Accent Top Bar */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-1 bg-linear-to-r from-transparent via-red-500 to-transparent" />
 
             {/* Warning / Logout Icon */}
             <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 text-[#ED1C24] flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
